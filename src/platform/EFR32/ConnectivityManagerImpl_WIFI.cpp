@@ -390,6 +390,7 @@ void ConnectivityManagerImpl::UpdateInternetConnectivityState(void)
 #if 1 //! defined (SL_WF200) || (SL_WF200 == 0)
 
         haveIPv4Conn = wfx_have_ipv4_addr(SL_WFX_STA_INTERFACE);
+        haveIPv6Conn = wfx_have_ipv6_addr(SL_WFX_STA_INTERFACE);
         /* TODO  - haveIPv6Conn */
 #else  /* Old code that needed LWIP and its internals */
         // Get the LwIP netif for the WiFi station interface.
