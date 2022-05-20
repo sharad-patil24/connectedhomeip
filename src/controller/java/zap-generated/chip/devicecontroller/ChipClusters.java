@@ -7596,6 +7596,22 @@ public class ChipClusters {
     @Override
     public native long initWithDevice(long devicePtr, int endpointId);
 
+    public interface PercentSettingAttributeCallback {
+      void onSuccess(@Nullable Integer value);
+
+      void onError(Exception ex);
+
+      default void onSubscriptionEstablished() {}
+    }
+
+    public interface SpeedSettingAttributeCallback {
+      void onSuccess(@Nullable Integer value);
+
+      void onError(Exception ex);
+
+      default void onSubscriptionEstablished() {}
+    }
+
     public interface GeneratedCommandListAttributeCallback {
       void onSuccess(List<Long> valueList);
 
@@ -7656,7 +7672,7 @@ public class ChipClusters {
       subscribeFanModeSequenceAttribute(chipClusterPtr, callback, minInterval, maxInterval);
     }
 
-    public void readPercentSettingAttribute(IntegerAttributeCallback callback) {
+    public void readPercentSettingAttribute(PercentSettingAttributeCallback callback) {
       readPercentSettingAttribute(chipClusterPtr, callback);
     }
 
@@ -7670,7 +7686,7 @@ public class ChipClusters {
     }
 
     public void subscribePercentSettingAttribute(
-        IntegerAttributeCallback callback, int minInterval, int maxInterval) {
+        PercentSettingAttributeCallback callback, int minInterval, int maxInterval) {
       subscribePercentSettingAttribute(chipClusterPtr, callback, minInterval, maxInterval);
     }
 
@@ -7692,7 +7708,7 @@ public class ChipClusters {
       subscribeSpeedMaxAttribute(chipClusterPtr, callback, minInterval, maxInterval);
     }
 
-    public void readSpeedSettingAttribute(IntegerAttributeCallback callback) {
+    public void readSpeedSettingAttribute(SpeedSettingAttributeCallback callback) {
       readSpeedSettingAttribute(chipClusterPtr, callback);
     }
 
@@ -7706,7 +7722,7 @@ public class ChipClusters {
     }
 
     public void subscribeSpeedSettingAttribute(
-        IntegerAttributeCallback callback, int minInterval, int maxInterval) {
+        SpeedSettingAttributeCallback callback, int minInterval, int maxInterval) {
       subscribeSpeedSettingAttribute(chipClusterPtr, callback, minInterval, maxInterval);
     }
 
@@ -7843,7 +7859,7 @@ public class ChipClusters {
         long chipClusterPtr, IntegerAttributeCallback callback, int minInterval, int maxInterval);
 
     private native void readPercentSettingAttribute(
-        long chipClusterPtr, IntegerAttributeCallback callback);
+        long chipClusterPtr, PercentSettingAttributeCallback callback);
 
     private native void writePercentSettingAttribute(
         long chipClusterPtr,
@@ -7852,7 +7868,10 @@ public class ChipClusters {
         @Nullable Integer timedWriteTimeoutMs);
 
     private native void subscribePercentSettingAttribute(
-        long chipClusterPtr, IntegerAttributeCallback callback, int minInterval, int maxInterval);
+        long chipClusterPtr,
+        PercentSettingAttributeCallback callback,
+        int minInterval,
+        int maxInterval);
 
     private native void readPercentCurrentAttribute(
         long chipClusterPtr, IntegerAttributeCallback callback);
@@ -7867,7 +7886,7 @@ public class ChipClusters {
         long chipClusterPtr, IntegerAttributeCallback callback, int minInterval, int maxInterval);
 
     private native void readSpeedSettingAttribute(
-        long chipClusterPtr, IntegerAttributeCallback callback);
+        long chipClusterPtr, SpeedSettingAttributeCallback callback);
 
     private native void writeSpeedSettingAttribute(
         long chipClusterPtr,
@@ -7876,7 +7895,10 @@ public class ChipClusters {
         @Nullable Integer timedWriteTimeoutMs);
 
     private native void subscribeSpeedSettingAttribute(
-        long chipClusterPtr, IntegerAttributeCallback callback, int minInterval, int maxInterval);
+        long chipClusterPtr,
+        SpeedSettingAttributeCallback callback,
+        int minInterval,
+        int maxInterval);
 
     private native void readSpeedCurrentAttribute(
         long chipClusterPtr, IntegerAttributeCallback callback);
@@ -20728,6 +20750,54 @@ public class ChipClusters {
         DefaultClusterCallback Callback,
         @Nullable Integer timedInvokeTimeoutMs);
 
+    public interface ChannelAttributeCallback {
+      void onSuccess(@Nullable Integer value);
+
+      void onError(Exception ex);
+
+      default void onSubscriptionEstablished() {}
+    }
+
+    public interface RoutingRoleAttributeCallback {
+      void onSuccess(@Nullable Integer value);
+
+      void onError(Exception ex);
+
+      default void onSubscriptionEstablished() {}
+    }
+
+    public interface NetworkNameAttributeCallback {
+      void onSuccess(@Nullable String value);
+
+      void onError(Exception ex);
+
+      default void onSubscriptionEstablished() {}
+    }
+
+    public interface PanIdAttributeCallback {
+      void onSuccess(@Nullable Integer value);
+
+      void onError(Exception ex);
+
+      default void onSubscriptionEstablished() {}
+    }
+
+    public interface ExtendedPanIdAttributeCallback {
+      void onSuccess(@Nullable Long value);
+
+      void onError(Exception ex);
+
+      default void onSubscriptionEstablished() {}
+    }
+
+    public interface MeshLocalPrefixAttributeCallback {
+      void onSuccess(@Nullable byte[] value);
+
+      void onError(Exception ex);
+
+      default void onSubscriptionEstablished() {}
+    }
+
     public interface NeighborTableListAttributeCallback {
       void onSuccess(List<ChipStructs.ThreadNetworkDiagnosticsClusterNeighborTable> valueList);
 
@@ -20793,57 +20863,57 @@ public class ChipClusters {
       default void onSubscriptionEstablished() {}
     }
 
-    public void readChannelAttribute(IntegerAttributeCallback callback) {
+    public void readChannelAttribute(ChannelAttributeCallback callback) {
       readChannelAttribute(chipClusterPtr, callback);
     }
 
     public void subscribeChannelAttribute(
-        IntegerAttributeCallback callback, int minInterval, int maxInterval) {
+        ChannelAttributeCallback callback, int minInterval, int maxInterval) {
       subscribeChannelAttribute(chipClusterPtr, callback, minInterval, maxInterval);
     }
 
-    public void readRoutingRoleAttribute(IntegerAttributeCallback callback) {
+    public void readRoutingRoleAttribute(RoutingRoleAttributeCallback callback) {
       readRoutingRoleAttribute(chipClusterPtr, callback);
     }
 
     public void subscribeRoutingRoleAttribute(
-        IntegerAttributeCallback callback, int minInterval, int maxInterval) {
+        RoutingRoleAttributeCallback callback, int minInterval, int maxInterval) {
       subscribeRoutingRoleAttribute(chipClusterPtr, callback, minInterval, maxInterval);
     }
 
-    public void readNetworkNameAttribute(CharStringAttributeCallback callback) {
+    public void readNetworkNameAttribute(NetworkNameAttributeCallback callback) {
       readNetworkNameAttribute(chipClusterPtr, callback);
     }
 
     public void subscribeNetworkNameAttribute(
-        CharStringAttributeCallback callback, int minInterval, int maxInterval) {
+        NetworkNameAttributeCallback callback, int minInterval, int maxInterval) {
       subscribeNetworkNameAttribute(chipClusterPtr, callback, minInterval, maxInterval);
     }
 
-    public void readPanIdAttribute(IntegerAttributeCallback callback) {
+    public void readPanIdAttribute(PanIdAttributeCallback callback) {
       readPanIdAttribute(chipClusterPtr, callback);
     }
 
     public void subscribePanIdAttribute(
-        IntegerAttributeCallback callback, int minInterval, int maxInterval) {
+        PanIdAttributeCallback callback, int minInterval, int maxInterval) {
       subscribePanIdAttribute(chipClusterPtr, callback, minInterval, maxInterval);
     }
 
-    public void readExtendedPanIdAttribute(LongAttributeCallback callback) {
+    public void readExtendedPanIdAttribute(ExtendedPanIdAttributeCallback callback) {
       readExtendedPanIdAttribute(chipClusterPtr, callback);
     }
 
     public void subscribeExtendedPanIdAttribute(
-        LongAttributeCallback callback, int minInterval, int maxInterval) {
+        ExtendedPanIdAttributeCallback callback, int minInterval, int maxInterval) {
       subscribeExtendedPanIdAttribute(chipClusterPtr, callback, minInterval, maxInterval);
     }
 
-    public void readMeshLocalPrefixAttribute(OctetStringAttributeCallback callback) {
+    public void readMeshLocalPrefixAttribute(MeshLocalPrefixAttributeCallback callback) {
       readMeshLocalPrefixAttribute(chipClusterPtr, callback);
     }
 
     public void subscribeMeshLocalPrefixAttribute(
-        OctetStringAttributeCallback callback, int minInterval, int maxInterval) {
+        MeshLocalPrefixAttributeCallback callback, int minInterval, int maxInterval) {
       subscribeMeshLocalPrefixAttribute(chipClusterPtr, callback, minInterval, maxInterval);
     }
 
@@ -21414,43 +21484,49 @@ public class ChipClusters {
     }
 
     private native void readChannelAttribute(
-        long chipClusterPtr, IntegerAttributeCallback callback);
+        long chipClusterPtr, ChannelAttributeCallback callback);
 
     private native void subscribeChannelAttribute(
-        long chipClusterPtr, IntegerAttributeCallback callback, int minInterval, int maxInterval);
+        long chipClusterPtr, ChannelAttributeCallback callback, int minInterval, int maxInterval);
 
     private native void readRoutingRoleAttribute(
-        long chipClusterPtr, IntegerAttributeCallback callback);
+        long chipClusterPtr, RoutingRoleAttributeCallback callback);
 
     private native void subscribeRoutingRoleAttribute(
-        long chipClusterPtr, IntegerAttributeCallback callback, int minInterval, int maxInterval);
-
-    private native void readNetworkNameAttribute(
-        long chipClusterPtr, CharStringAttributeCallback callback);
-
-    private native void subscribeNetworkNameAttribute(
         long chipClusterPtr,
-        CharStringAttributeCallback callback,
+        RoutingRoleAttributeCallback callback,
         int minInterval,
         int maxInterval);
 
-    private native void readPanIdAttribute(long chipClusterPtr, IntegerAttributeCallback callback);
+    private native void readNetworkNameAttribute(
+        long chipClusterPtr, NetworkNameAttributeCallback callback);
+
+    private native void subscribeNetworkNameAttribute(
+        long chipClusterPtr,
+        NetworkNameAttributeCallback callback,
+        int minInterval,
+        int maxInterval);
+
+    private native void readPanIdAttribute(long chipClusterPtr, PanIdAttributeCallback callback);
 
     private native void subscribePanIdAttribute(
-        long chipClusterPtr, IntegerAttributeCallback callback, int minInterval, int maxInterval);
+        long chipClusterPtr, PanIdAttributeCallback callback, int minInterval, int maxInterval);
 
     private native void readExtendedPanIdAttribute(
-        long chipClusterPtr, LongAttributeCallback callback);
+        long chipClusterPtr, ExtendedPanIdAttributeCallback callback);
 
     private native void subscribeExtendedPanIdAttribute(
-        long chipClusterPtr, LongAttributeCallback callback, int minInterval, int maxInterval);
+        long chipClusterPtr,
+        ExtendedPanIdAttributeCallback callback,
+        int minInterval,
+        int maxInterval);
 
     private native void readMeshLocalPrefixAttribute(
-        long chipClusterPtr, OctetStringAttributeCallback callback);
+        long chipClusterPtr, MeshLocalPrefixAttributeCallback callback);
 
     private native void subscribeMeshLocalPrefixAttribute(
         long chipClusterPtr,
-        OctetStringAttributeCallback callback,
+        MeshLocalPrefixAttributeCallback callback,
         int minInterval,
         int maxInterval);
 

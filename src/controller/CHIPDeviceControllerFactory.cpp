@@ -249,11 +249,12 @@ CHIP_ERROR DeviceControllerFactory::InitSystemState(FactoryInitParams params)
 
 void DeviceControllerFactory::PopulateInitParams(ControllerInitParams & controllerParams, const SetupParams & params)
 {
-    controllerParams.operationalCredentialsDelegate = params.operationalCredentialsDelegate;
-    controllerParams.operationalKeypair             = params.operationalKeypair;
-    controllerParams.controllerNOC                  = params.controllerNOC;
-    controllerParams.controllerICAC                 = params.controllerICAC;
-    controllerParams.controllerRCAC                 = params.controllerRCAC;
+    controllerParams.operationalCredentialsDelegate       = params.operationalCredentialsDelegate;
+    controllerParams.operationalKeypair                   = params.operationalKeypair;
+    controllerParams.hasExternallyOwnedOperationalKeypair = params.hasExternallyOwnedOperationalKeypair;
+    controllerParams.controllerNOC                        = params.controllerNOC;
+    controllerParams.controllerICAC                       = params.controllerICAC;
+    controllerParams.controllerRCAC                       = params.controllerRCAC;
 
     controllerParams.systemState        = mSystemState;
     controllerParams.controllerVendorId = params.controllerVendorId;
@@ -283,8 +284,9 @@ CHIP_ERROR DeviceControllerFactory::SetupCommissioner(SetupParams params, Device
     PopulateInitParams(commissionerParams, params);
 
     // Set commissioner-specific fields not in ControllerInitParams
-    commissionerParams.pairingDelegate     = params.pairingDelegate;
-    commissionerParams.defaultCommissioner = params.defaultCommissioner;
+    commissionerParams.pairingDelegate           = params.pairingDelegate;
+    commissionerParams.defaultCommissioner       = params.defaultCommissioner;
+    commissionerParams.deviceAttestationVerifier = params.deviceAttestationVerifier;
 
     CHIP_ERROR err = commissioner.Init(commissionerParams);
     return err;

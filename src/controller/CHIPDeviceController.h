@@ -98,7 +98,7 @@ struct ControllerInitParams
     /**
      * Controls whether or not the operationalKeypair should be owned by the caller.
      * By default, this is false, but if the keypair cannot be serialized, then
-     * setting this to true will allow you to manage this keypair's lifecycle.
+     * setting this to true will allow the caller to manage this keypair's lifecycle.
      */
     bool hasExternallyOwnedOperationalKeypair = false;
 
@@ -122,6 +122,10 @@ struct CommissionerInitParams : public ControllerInitParams
 {
     DevicePairingDelegate * pairingDelegate     = nullptr;
     CommissioningDelegate * defaultCommissioner = nullptr;
+    // Device attestation verifier instance for the commissioning.
+    // If null, the globally set attestation verifier (e.g. from GetDeviceAttestationVerifier()
+    // singleton) will be used.
+    Credentials::DeviceAttestationVerifier * deviceAttestationVerifier = nullptr;
 };
 
 /**
@@ -164,16 +168,25 @@ public:
     CHIP_ERROR GetPeerAddressAndPort(PeerId peerId, Inet::IPAddress & addr, uint16_t & port);
 
     /**
-     *   This function finds the device corresponding to deviceId, and establishes a secure connection with it.
-     *   Once the connection is successfully establishes (or if it's already connected), it calls `onConnectedDevice`
-     *   callback. If it fails to establish the connection, it calls `onError` callback.
+     * This function finds the device corresponding to deviceId, and establishes
+     * a CASE session with it.
+     *
+     * Once the CASE session is successfully established the `onConnectedDevice`
+     * callback is called. This can happen before GetConnectedDevice returns if
+     * there is an existing CASE session.
+     *
+     * If a CASE sessions fails to be established, the `onError` callback will
+     * be called.  This can also happen before GetConnectedDevice returns.
+     *
+     * An error return from this function means that neither callback has been
+     * called yet, and neither callback will be called in the future.
      */
     CHIP_ERROR GetConnectedDevice(NodeId deviceId, Callback::Callback<OnDeviceConnected> * onConnection,
                                   chip::Callback::Callback<OnDeviceConnectionFailure> * onFailure)
     {
         VerifyOrReturnError(mState == State::Initialized && mFabricInfo != nullptr, CHIP_ERROR_INCORRECT_STATE);
-        return mSystemState->CASESessionMgr()->FindOrEstablishSession(mFabricInfo->GetPeerIdForNode(deviceId), onConnection,
-                                                                      onFailure);
+        mSystemState->CASESessionMgr()->FindOrEstablishSession(mFabricInfo->GetPeerIdForNode(deviceId), onConnection, onFailure);
+        return CHIP_NO_ERROR;
     }
 
     /**
@@ -803,6 +816,7 @@ private:
     Platform::UniquePtr<app::ClusterStateCache> mAttributeCache;
     Platform::UniquePtr<app::ReadClient> mReadClient;
     Credentials::AttestationVerificationResult mAttestationResult;
+    Credentials::DeviceAttestationVerifier * mDeviceAttestationVerifier = nullptr;
 };
 
 } // namespace Controller
