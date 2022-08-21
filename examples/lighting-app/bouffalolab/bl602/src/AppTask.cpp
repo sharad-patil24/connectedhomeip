@@ -145,6 +145,7 @@ CHIP_ERROR AppTask::Init()
     gRequestorCore.Init(chip::Server::GetInstance(), gRequestorStorage, gRequestorUser, gDownloader);
     gImageProcessor.SetOTADownloader(&gDownloader);
     gDownloader.SetImageProcessorDelegate(&gImageProcessor);
+    gRequestorUser.SetPeriodicQueryTimeout(OTA_PERIODIC_QUERY_TIMEOUT);
     gRequestorUser.Init(&gRequestorCore, &gImageProcessor);
 
     ConfigurationMgr().LogDeviceConfig();
@@ -152,7 +153,6 @@ CHIP_ERROR AppTask::Init()
     PrintOnboardingCodes(chip::RendezvousInformationFlag(chip::RendezvousInformationFlag::kBLE));
 
     InitButtons();
-    StoreWifiConfig();
 
 #if PW_RPC_ENABLED
     chip::rpc::Init();
@@ -554,11 +554,6 @@ void AppTask::InitButtons(void)
 {
     Button_Configure_FactoryResetEventHandler(&FactoryResetButtonEventHandler);
     Button_Configure_LightingActionEventHandler(&LightingActionButtonEventHandler);
-}
-
-void AppTask::StoreWifiConfig(void)
-{
-    wifi_mgmr_scan(NULL, NULL);
 }
 
 void AppTask::LightStateUpdateEventHandler(void)

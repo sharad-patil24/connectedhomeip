@@ -24,6 +24,9 @@ declare_args() {
   # Location of the efr32 SDK.
   efr32_sdk_root = "${chip_root}/third_party/silabs/gecko_sdk"
   sdk_support_root = "${chip_root}/third_party/silabs/matter_support"
+
+  #Build openthread with prebuilt silabs lib
+  use_silabs_thread_lib = false
   enable_openthread_cli = true
   kvs_max_entries = 75
 
@@ -138,6 +141,11 @@ template("efr32_sdk") {
       "${sdk_support_root}/matter/efr32/${efr32_family}/${efr32_board}/autogen",
     ]
 
+    # Note that we're setting the mbedTLS and PSA configuration files through a
+    # define. This means the build system by default does not pick up changes in
+    # the content of these, only when changing the filename itself.
+    # To fix this, these files are also manually depended upon in the source set
+    # declared in efr32_mbedtls_config further down this file.
     defines = [
       "MBEDTLS_CONFIG_FILE=\"efr32-chip-mbedtls-config.h\"",
       "MBEDTLS_PSA_CRYPTO_CONFIG_FILE=\"efr32-mbedtls-psa-crypto-config.h\"",
@@ -214,7 +222,6 @@ template("efr32_sdk") {
 
     if (efr32_family == "efr32mg12") {
       _include_dirs += [
-        "${efr32_sdk_root}/hardware/kit/EFR32MG12_${efr32_board}/config",
         "${efr32_sdk_root}/platform/Device/SiliconLabs/EFR32MG12P/Include",
         "${efr32_sdk_root}/platform/radio/rail_lib/chip/efr32/efr32xg1x",
         "${efr32_sdk_root}/util/third_party/freertos/kernel/portable/GCC/ARM_CM4F",
@@ -231,7 +238,6 @@ template("efr32_sdk") {
       defines += [ "EFR32MG12" ]
     } else if (efr32_family == "efr32mg21") {
       _include_dirs += [
-        "${efr32_sdk_root}/hardware/kit/EFR32MG21_${efr32_board}/config",
         "${efr32_sdk_root}/platform/Device/SiliconLabs/EFR32MG21/Include",
         "${efr32_sdk_root}/platform/radio/rail_lib/chip/efr32/efr32xg2x",
         "${efr32_sdk_root}/util/third_party/freertos/kernel/portable/GCC/ARM_CM33_NTZ/non_secure",
@@ -252,7 +258,6 @@ template("efr32_sdk") {
       ]
     } else if (efr32_family == "efr32mg24") {
       _include_dirs += [
-        "${efr32_sdk_root}/hardware/kit/EFR32MG24_${efr32_board}/config",
         "${efr32_sdk_root}/platform/Device/SiliconLabs/EFR32MG24/Include",
         "${efr32_sdk_root}/platform/radio/rail_lib/chip/efr32/efr32xg2x",
         "${efr32_sdk_root}/util/third_party/freertos/kernel/portable/GCC/ARM_CM33_NTZ/non_secure",
@@ -308,6 +313,19 @@ template("efr32_sdk") {
     }
   }
 
+  source_set("efr32_mbedtls_config") {
+    # We're setting the mbedTLS config flags here as the efr32_sdk target
+    # acts as the mbedTLS target for EFR32 builds. We need this for the build
+    # system to recompile mbedTLS (= the SDK) when the mbedTLS config gets
+    # edited.
+    sources = [
+      "${chip_root}/src/platform/EFR32/efr32-chip-mbedtls-config.h",
+      "${chip_root}/src/platform/EFR32/efr32-mbedtls-psa-crypto-config.h",
+    ]
+
+    public_deps = [ "${chip_root}/src/crypto:crypto_buildconfig" ]
+  }
+
   source_set(sdk_target_name) {
     sources = [
       "${chip_root}/third_party/mbedtls/repo/include/mbedtls/platform.h",
@@ -321,7 +339,9 @@ template("efr32_sdk") {
       "${efr32_sdk_root}/platform/driver/button/src/sl_button.c",
       "${efr32_sdk_root}/platform/driver/button/src/sl_simple_button.c",
       "${efr32_sdk_root}/platform/driver/leddrv/src/sl_led.c",
+      "${efr32_sdk_root}/platform/driver/leddrv/src/sl_pwm_led.c",
       "${efr32_sdk_root}/platform/driver/leddrv/src/sl_simple_led.c",
+      "${efr32_sdk_root}/platform/driver/leddrv/src/sl_simple_rgb_pwm_led.c",
       "${efr32_sdk_root}/platform/emdrv/dmadrv/src/dmadrv.c",
       "${efr32_sdk_root}/platform/emdrv/gpiointerrupt/src/gpiointerrupt.c",
       "${efr32_sdk_root}/platform/emdrv/nvm3/src/nvm3_default.c",
@@ -637,6 +657,7 @@ template("efr32_sdk") {
     }
 
     public_deps = [
+      ":efr32_mbedtls_config",
       "${segger_rtt_root}:segger_rtt",
       "${segger_rtt_root}:segger_rtt_printf",
       "${segger_rtt_root}:segger_rtt_syscalls",

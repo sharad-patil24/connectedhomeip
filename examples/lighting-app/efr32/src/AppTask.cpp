@@ -21,12 +21,7 @@
 #include "AppConfig.h"
 #include "AppEvent.h"
 #include "LEDWidget.h"
-#ifdef DISPLAY_ENABLED
-#include "lcd.h"
-#ifdef QR_CODE_ENABLED
-#include "qrcodegen.h"
-#endif // QR_CODE_ENABLED
-#endif // DISPLAY_ENABLED
+
 #include "sl_simple_led_instances.h"
 #include <app-common/zap-generated/attribute-id.h>
 #include <app-common/zap-generated/attribute-type.h>
@@ -68,7 +63,12 @@ EmberAfIdentifyEffectIdentifier sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDEN
 namespace {
 void OnTriggerIdentifyEffectCompleted(chip::System::Layer * systemLayer, void * appState)
 {
+    ChipLogProgress(Zcl, "Trigger Identify Complete");
     sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT;
+
+#if CHIP_DEVICE_CONFIG_ENABLE_SED == 1
+    AppTask::GetAppTask().StopStatusLEDTimer();
+#endif
 }
 } // namespace
 
@@ -82,6 +82,10 @@ void OnTriggerIdentifyEffect(Identify * identify)
                         identify->mEffectVariant);
         sIdentifyEffect = static_cast<EmberAfIdentifyEffectIdentifier>(identify->mEffectVariant);
     }
+
+#if CHIP_DEVICE_CONFIG_ENABLE_SED == 1
+    AppTask::GetAppTask().StartStatusLEDTimer();
+#endif
 
     switch (sIdentifyEffect)
     {
@@ -107,8 +111,8 @@ void OnTriggerIdentifyEffect(Identify * identify)
 
 Identify gIdentify = {
     chip::EndpointId{ 1 },
-    [](Identify *) { ChipLogProgress(Zcl, "onIdentifyStart"); },
-    [](Identify *) { ChipLogProgress(Zcl, "onIdentifyStop"); },
+    AppTask::GetAppTask().OnIdentifyStart,
+    AppTask::GetAppTask().OnIdentifyStop,
     EMBER_ZCL_IDENTIFY_IDENTIFY_TYPE_VISIBLE_LED,
     OnTriggerIdentifyEffect,
 };
@@ -123,6 +127,9 @@ AppTask AppTask::sAppTask;
 CHIP_ERROR AppTask::Init()
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
+#ifdef DISPLAY_ENABLED
+    GetLCD().Init((uint8_t *) "Lighting-App");
+#endif
 
     err = BaseApplication::Init(&gIdentify);
     if (err != CHIP_NO_ERROR)
@@ -163,6 +170,10 @@ void AppTask::AppTaskMain(void * pvParameter)
         appError(err);
     }
 
+#if !(defined(CHIP_DEVICE_CONFIG_ENABLE_SED) && CHIP_DEVICE_CONFIG_ENABLE_SED)
+    sAppTask.StartStatusLEDTimer();
+#endif
+
     EFR32_LOG("App Task started");
 
     while (true)
@@ -174,6 +185,24 @@ void AppTask::AppTaskMain(void * pvParameter)
             eventReceived = xQueueReceive(sAppEventQueue, &event, 0);
         }
     }
+}
+
+void AppTask::OnIdentifyStart(Identify * identify)
+{
+    ChipLogProgress(Zcl, "onIdentifyStart");
+
+#if CHIP_DEVICE_CONFIG_ENABLE_SED == 1
+    sAppTask.StartStatusLEDTimer();
+#endif
+}
+
+void AppTask::OnIdentifyStop(Identify * identify)
+{
+    ChipLogProgress(Zcl, "onIdentifyStop");
+
+#if CHIP_DEVICE_CONFIG_ENABLE_SED == 1
+    sAppTask.StopStatusLEDTimer();
+#endif
 }
 
 void AppTask::LightActionEventHandler(AppEvent * aEvent)
@@ -235,16 +264,13 @@ void AppTask::ButtonEventHandler(const sl_button_t * buttonHandle, uint8_t btnAc
 void AppTask::ActionInitiated(LightingManager::Action_t aAction, int32_t aActor)
 {
     // Action initiated, update the light led
-    if (aAction == LightingManager::ON_ACTION)
-    {
-        EFR32_LOG("Turning light ON")
-        sLightLED.Set(true);
-    }
-    else if (aAction == LightingManager::OFF_ACTION)
-    {
-        EFR32_LOG("Turning light OFF")
-        sLightLED.Set(false);
-    }
+    bool lightOn = aAction == LightingManager::ON_ACTION;
+    EFR32_LOG("Turning light %s", (lightOn) ? "On" : "Off")
+    sLightLED.Set(lightOn);
+
+#ifdef DISPLAY_ENABLED
+    sAppTask.GetLCD().WriteDemoUI(lightOn);
+#endif
 
     if (aActor == AppEvent::kEventType_Button)
     {

@@ -1,1 +1,1 @@
-0.5.92 Version bump reason: [TIZEN] Support for installing Tizen SDK without docker
+0.5.94 Version bump reason: Install ccache to the chip-build image

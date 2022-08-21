@@ -78,7 +78,12 @@ EmberAfIdentifyEffectIdentifier sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDEN
 namespace {
 void OnTriggerIdentifyEffectCompleted(chip::System::Layer * systemLayer, void * appState)
 {
+    ChipLogProgress(Zcl, "Trigger Identify Complete");
     sIdentifyEffect = EMBER_ZCL_IDENTIFY_EFFECT_IDENTIFIER_STOP_EFFECT;
+
+#if CHIP_DEVICE_CONFIG_ENABLE_SED == 1
+    AppTask::GetAppTask().StopStatusLEDTimer();
+#endif
 }
 
 void OnTriggerIdentifyEffect(Identify * identify)
@@ -91,6 +96,10 @@ void OnTriggerIdentifyEffect(Identify * identify)
                         identify->mEffectVariant);
         sIdentifyEffect = static_cast<EmberAfIdentifyEffectIdentifier>(identify->mEffectVariant);
     }
+
+#if CHIP_DEVICE_CONFIG_ENABLE_SED == 1
+    AppTask::GetAppTask().StartStatusLEDTimer();
+#endif
 
     switch (sIdentifyEffect)
     {
@@ -116,8 +125,8 @@ void OnTriggerIdentifyEffect(Identify * identify)
 
 Identify gIdentify = {
     chip::EndpointId{ 1 },
-    [](Identify *) { ChipLogProgress(Zcl, "onIdentifyStart"); },
-    [](Identify *) { ChipLogProgress(Zcl, "onIdentifyStop"); },
+    AppTask::GetAppTask().OnIdentifyStart,
+    AppTask::GetAppTask().OnIdentifyStop,
     EMBER_ZCL_IDENTIFY_IDENTIFY_TYPE_VISIBLE_LED,
     OnTriggerIdentifyEffect,
 };
@@ -132,6 +141,10 @@ AppTask AppTask::sAppTask;
 CHIP_ERROR AppTask::Init()
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
+
+#ifdef DISPLAY_ENABLED
+    GetLCD().Init((uint8_t *) "Lock-App", true);
+#endif
 
     err = BaseApplication::Init(&gIdentify);
     if (err != CHIP_NO_ERROR)
@@ -242,6 +255,10 @@ void AppTask::AppTaskMain(void * pvParameter)
         appError(err);
     }
 
+#if !(defined(CHIP_DEVICE_CONFIG_ENABLE_SED) && CHIP_DEVICE_CONFIG_ENABLE_SED)
+    sAppTask.StartStatusLEDTimer();
+#endif
+
     EFR32_LOG("App Task started");
 
     // Users and credentials should be checked once from nvm flash on boot
@@ -256,6 +273,24 @@ void AppTask::AppTaskMain(void * pvParameter)
             eventReceived = xQueueReceive(sAppEventQueue, &event, 0);
         }
     }
+}
+
+void AppTask::OnIdentifyStart(Identify * identify)
+{
+    ChipLogProgress(Zcl, "onIdentifyStart");
+
+#if CHIP_DEVICE_CONFIG_ENABLE_SED == 1
+    sAppTask.StartStatusLEDTimer();
+#endif
+}
+
+void AppTask::OnIdentifyStop(Identify * identify)
+{
+    ChipLogProgress(Zcl, "onIdentifyStop");
+
+#if CHIP_DEVICE_CONFIG_ENABLE_SED == 1
+    sAppTask.StopStatusLEDTimer();
+#endif
 }
 
 void AppTask::LockActionEventHandler(AppEvent * aEvent)
@@ -323,16 +358,14 @@ void AppTask::ButtonEventHandler(const sl_button_t * buttonHandle, uint8_t btnAc
 
 void AppTask::ActionInitiated(LockManager::Action_t aAction, int32_t aActor)
 {
-    // Action initiated, update the light led
-    if (aAction == LockManager::LOCK_ACTION)
+    if (aAction == LockManager::UNLOCK_ACTION || aAction == LockManager::LOCK_ACTION)
     {
-        EFR32_LOG("Lock Action has been initiated")
-        sLockLED.Set(false);
-    }
-    else if (aAction == LockManager::UNLOCK_ACTION)
-    {
-        EFR32_LOG("Unlock Action has been initiated")
-        sLockLED.Set(true);
+        bool locked = (aAction == LockManager::LOCK_ACTION);
+        EFR32_LOG("%s Action has been initiated", (locked) ? "Lock" : "Unlock");
+        sLockLED.Set(!locked);
+#ifdef DISPLAY_ENABLED
+        sAppTask.GetLCD().WriteDemoUI(locked);
+#endif
     }
 
     if (aActor == AppEvent::kEventType_Button)

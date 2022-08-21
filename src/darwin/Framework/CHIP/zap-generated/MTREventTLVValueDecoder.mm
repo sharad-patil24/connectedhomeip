@@ -302,8 +302,8 @@ id MTRDecodeEventPayload(const ConcreteEventPath & aPath, TLV::TLVReader & aRead
         }
         break;
     }
-    case Clusters::BridgedActions::Id: {
-        using namespace Clusters::BridgedActions;
+    case Clusters::Actions::Id: {
+        using namespace Clusters::Actions;
         switch (aPath.mEventId) {
 
         case Events::StateChanged::Id: {
@@ -313,7 +313,7 @@ id MTRDecodeEventPayload(const ConcreteEventPath & aPath, TLV::TLVReader & aRead
                 return nil;
             }
 
-            MTRBridgedActionsClusterStateChangedEvent * value = [MTRBridgedActionsClusterStateChangedEvent new];
+            MTRActionsClusterStateChangedEvent * value = [MTRActionsClusterStateChangedEvent new];
 
             do {
                 NSNumber * _Nonnull memberValue;
@@ -341,7 +341,7 @@ id MTRDecodeEventPayload(const ConcreteEventPath & aPath, TLV::TLVReader & aRead
                 return nil;
             }
 
-            MTRBridgedActionsClusterActionFailedEvent * value = [MTRBridgedActionsClusterActionFailedEvent new];
+            MTRActionsClusterActionFailedEvent * value = [MTRActionsClusterActionFailedEvent new];
 
             do {
                 NSNumber * _Nonnull memberValue;
@@ -2239,6 +2239,16 @@ id MTRDecodeEventPayload(const ConcreteEventPath & aPath, TLV::TLVReader & aRead
 
             return value;
         }
+
+        default:
+            *aError = CHIP_ERROR_IM_MALFORMED_EVENT_PATH_IB;
+            break;
+        }
+        break;
+    }
+    case Clusters::FaultInjection::Id: {
+        using namespace Clusters::FaultInjection;
+        switch (aPath.mEventId) {
 
         default:
             *aError = CHIP_ERROR_IM_MALFORMED_EVENT_PATH_IB;

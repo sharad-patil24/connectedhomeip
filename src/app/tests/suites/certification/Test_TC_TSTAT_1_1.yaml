@@ -14,6 +14,9 @@
 
 name: 42.1.1. [TC-TSTAT-1.1] Global attributes with server as DUT
 
+PICS:
+    - TSTAT.S
+
 config:
     nodeId: 0x12344321
     cluster: "Thermostat"
@@ -35,6 +38,17 @@ tests:
           value: 5
           constraints:
               type: int16u
+
+    - label: "Read the global attribute: FeatureMap"
+      PICS:
+          "!TSTAT.S.F00 && !TSTAT.S.F01 && !TSTAT.S.F02 && !TSTAT.S.F03 &&
+          !TSTAT.S.F04 && !TSTAT.S.F05"
+      command: "readAttribute"
+      attribute: "FeatureMap"
+      response:
+          value: 0
+          constraints:
+              type: bitmap32
 
     - label: "Read the global attribute: FeatureMap"
       PICS:
@@ -179,7 +193,7 @@ tests:
       response:
           constraints:
               type: list
-    # #issue #15011 disabled steps below Global attributes missing from YAML framework
+    #Commenting out the step EventList attribute which is out of scope for matter V1.0
     # - label: "Read the global attribute: EventList"
     #   disabled: true
     #   verification: |
