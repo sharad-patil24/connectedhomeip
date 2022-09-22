@@ -9,6 +9,7 @@
 #include "em_ldma.h"
 #include "em_usart.h"
 
+#include "wifi_config.h"
 #include "wfx_host_events.h"
 #include "wifi_config.h"
 
@@ -72,9 +73,12 @@ void wfx_lwip_set_sta_link_up(void)
     netifapi_netif_set_link_up(&sta_netif);
     dhcpclient_set_link_state(LINK_UP);
     /*
-     * Enable IPV6
-     */
-    netif_create_ip6_linklocal_address(&sta_netif, MAC_48_BIT_SET);
+   * Enable IPV6
+   */
+#if LWIP_IPV6_AUTOCONFIG
+  sta_netif.ip6_autoconfig_enabled = 1;
+#endif /* LWIP_IPV6_AUTOCONFIG */
+  netif_create_ip6_linklocal_address(&sta_netif, MAC_48_BIT_SET);
 }
 
 /***************************************************************************
