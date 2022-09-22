@@ -116,9 +116,8 @@ static void low_level_input(struct netif * netif, uint8_t * b, uint16_t len)
     {
         return;
     }
-    if (len < 60)
-    { /* 60 : LWIP frame alignment */
-        len = 60;
+  if (len < LWIP_FRAME_ALIGNMENT) {  /* 60 : LWIP frame alignment */
+    len = LWIP_FRAME_ALIGNMENT;
     }
     /* We allocate a pbuf chain of pbufs from the Lwip buffer pool
      * and copy the data to the pbuf chain
