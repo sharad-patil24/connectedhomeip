@@ -359,6 +359,7 @@ template("efr32_sdk") {
       "${efr32_sdk_root}/platform/emdrv/nvm3/src/nvm3_default.c",
       "${efr32_sdk_root}/platform/emdrv/nvm3/src/nvm3_hal_flash.c",
       "${efr32_sdk_root}/platform/emdrv/nvm3/src/nvm3_lock.c",
+      "${efr32_sdk_root}/platform/emdrv/spidrv/src/spidrv.c",
       "${efr32_sdk_root}/platform/emlib/src/em_adc.c",
       "${efr32_sdk_root}/platform/emlib/src/em_cmu.c",
       "${efr32_sdk_root}/platform/emlib/src/em_core.c",
@@ -518,7 +519,6 @@ template("efr32_sdk") {
       "${sdk_support_root}/matter/efr32/${efr32_family}/${efr32_board}/autogen/sl_event_handler.c",
       "${sdk_support_root}/matter/efr32/${efr32_family}/${efr32_board}/autogen/sl_simple_button_instances.c",
       "${sdk_support_root}/matter/efr32/${efr32_family}/${efr32_board}/autogen/sl_simple_led_instances.c",
-      "${efr32_sdk_root}/platform/emdrv/spidrv/src/spidrv.c",
       "${sdk_support_root}/matter/efr32/${efr32_family}/${efr32_board}/autogen/sl_spidrv_init.c",
     ]
 
