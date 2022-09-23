@@ -97,7 +97,7 @@ static void low_level_init(struct netif * netif)
     /* Accept broadcast address and ARP traffic */
     netif->flags |= NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_IGMP;
 #if LWIP_IPV6_MLD
-  netif->flags |= NETIF_FLAG_MLD6;
+    netif->flags |= NETIF_FLAG_MLD6;
 #endif /* LWIP_IPV6_MLD */
 }
 
@@ -119,8 +119,9 @@ static void low_level_input(struct netif * netif, uint8_t * b, uint16_t len)
     {
         return;
     }
-  if (len < LWIP_FRAME_ALIGNMENT) {  /* 60 : LWIP frame alignment */
-    len = LWIP_FRAME_ALIGNMENT;
+    if (len < LWIP_FRAME_ALIGNMENT)
+    { /* 60 : LWIP frame alignment */
+        len = LWIP_FRAME_ALIGNMENT;
     }
     /* We allocate a pbuf chain of pbufs from the Lwip buffer pool
      * and copy the data to the pbuf chain
