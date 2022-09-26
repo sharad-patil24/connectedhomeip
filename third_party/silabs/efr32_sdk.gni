@@ -222,7 +222,7 @@ template("efr32_sdk") {
     # USART include files
     if ((defined(invoker.chip_enable_pw_rpc) && invoker.chip_enable_pw_rpc) ||
         chip_build_libshell || enable_openthread_cli ||
-        (defined(invoker.use_wf200) && invoker.use_wf200) ||
+        (defined(invoker.chip_enable_wifi) && invoker.chip_enable_wifi) ||
         (defined(invoker.show_qr_code) && invoker.show_qr_code) ||
         (defined(invoker.disable_lcd) && !invoker.disable_lcd) ||
         (defined(invoker.use_external_flash) && use_external_flash)) {
@@ -248,6 +248,7 @@ template("efr32_sdk") {
         "${efr32_sdk_root}/util/third_party/freertos/kernel/portable/GCC/ARM_CM4F",
         "${efr32_sdk_root}/platform/radio/rail_lib/plugin/pa-conversions/efr32xg1x/config",
         "${efr32_sdk_root}/platform/service/device_init/config/s1/",
+        "${efr32_sdk_root}/platform/emdrv/spidrv/inc",
       ]
 
       libs += [
@@ -287,6 +288,7 @@ template("efr32_sdk") {
         "${efr32_sdk_root}/platform/radio/rail_lib/plugin/pa-conversions/efr32xg24",
         "${efr32_sdk_root}/platform/radio/rail_lib/plugin/pa-conversions/efr32xg24/config",
         "${efr32_sdk_root}/platform/service/device_init/config/s2/",
+        "${efr32_sdk_root}/platform/emdrv/spidrv/inc",
       ]
 
       libs += [
@@ -557,6 +559,8 @@ template("efr32_sdk") {
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_device_init_clocks.c",
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_event_handler.c",
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_simple_button_instances.c",
+      "${efr32_sdk_root}/platform/emdrv/spidrv/src/spidrv.c",
+      "${sdk_support_root}/matter/efr32/${efr32_family}/${efr32_board}/autogen/sl_spidrv_init.c",
     ]
 
     if (use_wstk_leds) {
@@ -584,7 +588,7 @@ template("efr32_sdk") {
     # USART sources files
     if ((defined(invoker.chip_enable_pw_rpc) && invoker.chip_enable_pw_rpc) ||
         chip_build_libshell || enable_openthread_cli ||
-        (defined(invoker.use_wf200) && invoker.use_wf200) ||
+        (defined(invoker.chip_enable_wifi) && invoker.chip_enable_wifi) ||
         (defined(invoker.show_qr_code) && invoker.show_qr_code) ||
         (defined(invoker.disable_lcd) && !invoker.disable_lcd) ||
         (defined(invoker.use_external_flash) && use_external_flash)) {
