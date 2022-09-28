@@ -250,7 +250,7 @@
 [submodule "third_party/silabs/matter_support"]
 	path = third_party/silabs/matter_support
 	url = https://github.com/SiliconLabs/sdk_support.git
-	branch = main
+	branch = feature/code_cleanup_file_movement
 	platforms = efr32
 [submodule "third_party/silabs/gecko_sdk"]
 	path = third_party/silabs/gecko_sdk
