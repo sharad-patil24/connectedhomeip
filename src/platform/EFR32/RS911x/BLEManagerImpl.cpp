@@ -36,6 +36,9 @@
 #include "sl_bt_stack_config.h"
 #include "sl_bt_stack_init.h"
 #include "timers.h"
+
+#include "rsi_driver.h"
+
 #include <ble/CHIPBleServiceData.h>
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
@@ -146,11 +149,52 @@ CHIP_ERROR BLEManagerImpl::_Init()
     memset(mIndConfId, kUnusedIndex, sizeof(mIndConfId));
     mServiceMode = ConnectivityManager::kCHIPoBLEServiceMode_Enabled;
 
+    rsi_ble_add_simple_chat_serv3();
+
+    // rsi_ble_device_info_add_new_serv();
+    // registering the GAP callback functions
+    rsi_ble_gap_register_callbacks(NULL, rsi_ble_on_connect_event, rsi_ble_on_disconnect_event, NULL, NULL, NULL,
+                                   rsi_ble_on_enhance_conn_status_event, NULL, NULL, NULL);
+    // registering the GATT call back functions
+  rsi_ble_gatt_register_callbacks(NULL,
+                                  NULL, /*rsi_ble_profile*/
+                                  NULL, /*rsi_ble_char_services*/
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  rsi_ble_on_gatt_write_event,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  rsi_ble_on_mtu_event,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  rsi_ble_on_event_indication_confirmation,
+                                  NULL);
+    //  initializing the application events map
+    rsi_ble_app_init_events();
+
+//EFR
+#if 0
     // Start Bluetooth Link Layer and stack tasks
     ret =
         bluetooth_start(CHIP_DEVICE_CONFIG_BLE_LL_TASK_PRIORITY, CHIP_DEVICE_CONFIG_BLE_STACK_TASK_PRIORITY, initialize_bluetooth);
 
     VerifyOrExit(ret == SL_STATUS_OK, err = MapBLEError(ret));
+#endif
+//End EFR
+
+    //Init BLE
+
+
 
     // Create the Bluetooth Application task
     BluetoothEventTaskHandle =
@@ -196,6 +240,7 @@ void BLEManagerImpl::bluetoothStackEventHandler(void * p_arg)
 {
     EventBits_t flags = 0;
 
+#if 0
     while (1)
     {
         // wait for Bluetooth stack events, do not consume set flag
@@ -313,6 +358,57 @@ void BLEManagerImpl::bluetoothStackEventHandler(void * p_arg)
 
         vRaiseEventFlagBasedOnContext(bluetooth_event_flags, BLUETOOTH_EVENT_FLAG_EVT_HANDLED);
     }
+#endif
+// waiting for events from controller.
+    while (1)
+    {
+        // checking for events list
+        event_id = rsi_ble_app_get_event();
+        if (event_id == -1)
+        {
+            continue;
+        }
+        switch (event_id)
+        {
+        case RSI_BLE_CONN_EVENT: {
+            rsi_ble_app_clear_event(RSI_BLE_CONN_EVENT);
+            WFX_RSI_LOG(" RSI_BLE : Module got connected");
+            sInstance.HandleConnectEvent(bluetooth_evt);
+        }
+        break;
+        case RSI_BLE_DISCONN_EVENT: {
+            // event invokes when disconnection was completed
+            // clear the served event
+            rsi_ble_app_clear_event(RSI_BLE_DISCONN_EVENT);
+            WFX_RSI_LOG(" RSI_BLE : Module got Disconnected");
+            sInstance.HandleConnectionCloseEvent(bluetooth_evt);
+        }
+        break;
+        case RSI_BLE_MTU_EVENT: {
+            // event invokes when write/notification events received
+            WFX_RSI_LOG("RSI_BLE::In  mtu evt");
+            // clear the served event
+            rsi_ble_app_clear_event(RSI_BLE_MTU_EVENT);
+            sInstance.UpdateMtu(bluetooth_evt);
+        }
+        break;
+        case RSI_BLE_GATT_WRITE_EVENT: {
+            // event invokes when write/notification events received
+            WFX_RSI_LOG("RSI_BLE : Write event");
+            // clear the served event
+            rsi_ble_app_clear_event(RSI_BLE_GATT_WRITE_EVENT);
+        }
+        break;
+        case RSI_BLE_GATT_INDICATION_CONFIRMATION: {
+            WFX_RSI_LOG("RSI_BLE : indication confirmation");
+        }
+        break;
+        default:
+             ChipLogProgress(DeviceLayer, "evt_UNKNOWN id = %08" PRIx32, SL_BT_MSG_ID(bluetooth_evt->header));
+             break;
+        }
+    }
+    PlatformMgr().UnlockChipStack();
 }
 
 CHIP_ERROR BLEManagerImpl::_SetAdvertisingEnabled(bool val)
