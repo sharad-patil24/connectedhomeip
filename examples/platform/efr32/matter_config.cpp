@@ -25,6 +25,9 @@
 
 #include <mbedtls/platform.h>
 
+#include "event_groups.h"
+#include "wfx_rsi.h"
+
 #ifdef SL_WIFI
 #include "wfx_host_events.h"
 #endif /* SL_WIFI */
@@ -40,6 +43,8 @@
 #ifdef HEAP_MONITORING
 #include "MemMonitoring.h"
 #endif
+
+
 
 using namespace ::chip;
 using namespace ::chip::Inet;
@@ -144,6 +149,11 @@ CHIP_ERROR EFR32MatterConfig::InitMatter(const char * appName)
     EFR32_LOG("Init CHIP Stack");
     // Init Chip memory management before the stack
     ReturnErrorOnFailure(chip::Platform::MemoryInit());
+
+    EFR32_LOG("Init RSI 911x Platform");
+    wfx_rsi_init_platform();
+
+    EFR32_LOG("Init CHIP Stack");
     ReturnErrorOnFailure(PlatformMgr().InitChipStack());
 
     chip::DeviceLayer::ConnectivityMgr().SetBLEDeviceName(appName);

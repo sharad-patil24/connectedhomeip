@@ -523,12 +523,14 @@ void wfx_rsi_task(void * arg)
     struct netif * sta_netif;
 #endif
     (void) arg;
+ #if 0
     uint32_t rsi_status = wfx_rsi_init();
     if (rsi_status != RSI_SUCCESS)
     {
         WFX_RSI_LOG("%s: error: wfx_rsi_init with status: %02x", __func__, rsi_status);
         return;
     }
+#endif
 #ifndef RS911X_SOCKETS
     wfx_lwip_start();
     last_dhcp_poll = xTaskGetTickCount();
@@ -850,3 +852,13 @@ int32_t wfx_rsi_send_data(void * p, uint16_t len)
 }
 
 struct wfx_rsi wfx_rsi;
+
+void wfx_rsi_init_platform()
+{
+  uint32_t rsi_status = wfx_rsi_init();
+  if (rsi_status != RSI_SUCCESS)
+  {
+      WFX_RSI_LOG("%s: error: wfx_rsi_init with status: %02x", __func__, rsi_status);
+      return;
+  }
+}

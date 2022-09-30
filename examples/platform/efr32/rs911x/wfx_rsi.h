@@ -81,6 +81,7 @@ extern struct wfx_rsi wfx_rsi;
 #ifdef __cplusplus
 extern "C" {
 #endif
+void wfx_rsi_init_platform(void);
 void wfx_rsidev_init(void);
 void wfx_rsi_task(void * arg);
 void efr32Log(const char * aFormat, ...);
@@ -90,6 +91,7 @@ int32_t wfx_rsi_get_ap_ext(wfx_wifi_scan_ext_t * extra_info);
 int32_t wfx_rsi_reset_count();
 int32_t wfx_rsi_disconnect();
 #define WFX_RSI_LOG(...) efr32Log(__VA_ARGS__);
+
 
 #ifdef __cplusplus
 }
