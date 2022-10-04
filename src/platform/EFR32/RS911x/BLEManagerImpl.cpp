@@ -36,9 +36,22 @@
 #include "sl_bt_stack_config.h"
 #include "sl_bt_stack_init.h"
 #include "timers.h"
-
 #include "rsi_driver.h"
 
+// Error include files
+#include "rsi_error.h"
+
+#ifdef RSI_WITH_OS
+// OS include file to refer OS specific functionality
+#include "rsi_os.h"
+#endif
+#ifdef RSI_M4_INTERFACE
+#include "rsi_board.h"
+#endif
+
+//BLE Specific inclusions
+#include <rsi_ble_apis.h>
+#include <rsi_ble_config.h>
 #include <ble/CHIPBleServiceData.h>
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
@@ -49,6 +62,33 @@
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
 #include <setup_payload/AdditionalDataPayloadGenerator.h>
 #endif
+
+// Memory length for driver
+#define GLOBAL_BUFF_LEN 15000
+
+#ifdef RSI_WITH_OS
+#define RSI_APPLICATION_TASK_PRIORITY 1
+#define RSI_BLE_TASK_PRIORITY         2
+#define RSI_DRIVER_TASK_PRIORITY      3
+
+#define RSI_APPLICATION_TASK_STACK_SIZE 1000
+#define RSI_BLE_TASK_STACK_SIZE         1000
+#define RSI_DRIVER_TASK_STACK_SIZE      2000
+#endif
+
+// Wlan client mode
+#define RSI_WLAN_CLIENT_MODE 0
+
+// BTLE Coex mode
+#define RSI_BTLE_MODE 13
+
+// Parameter to run forever loop
+#define RSI_FOREVER 1
+
+// Memory to initialize driver
+uint8_t global_buf[GLOBAL_BUFF_LEN];
+
+uint8_t ble_connected;
 
 using namespace ::chip;
 using namespace ::chip::Ble;
@@ -121,7 +161,7 @@ BLEManagerImpl BLEManagerImpl::sInstance;
  * @return none
  *
  * All bluetooth specific initialization
- * code should be here like sl_bt_init_stack(),
+ * code should be here like rsi_bt_init(),
  * sl_bt_init_multiprotocol() and so on.
  ******************************************************************************/
 extern "C" sl_status_t initialize_bluetooth()
@@ -130,11 +170,113 @@ extern "C" sl_status_t initialize_bluetooth()
     NVIC_ClearPendingIRQ(PendSV_IRQn);
     NVIC_EnableIRQ(PendSV_IRQn);
 #endif
-    sl_status_t err = sl_bt_stack_init();
+    sl_status_t err = rsi_ble_init();
     EFM_ASSERT(err == SL_STATUS_OK);
 
     return err;
 }
+
+
+/*==============================================*/
+/**
+ * @fn         rsi_ble_app_init_events
+ * @brief      initializes the event parameter.
+ * @param[in]  none.
+ * @return     none.
+ * @section description
+ * This function is used during BLE initialization.
+ */
+static void rsi_ble_app_init_events()
+{
+    ble_app_event_map  = 0;
+    ble_app_event_mask = 0xFFFFFFFF;
+    ble_app_event_mask = ble_app_event_mask; // To suppress warning while compiling
+    return;
+}
+
+
+/*==============================================*/
+/**
+ * @fn         rsi_ble_app_init
+ * @brief      initialize the BLE module.
+ * @param[in]  none
+ * @return     none.
+ * @section description
+ * This function is used to initialize the BLE module
+ */
+void rsi_ble_configurator_init(void)
+{
+  uint8_t adv[31] = { 2, 1, 6 };
+
+  //  initializing the application events map
+  rsi_ble_app_init_events();
+
+  rsi_ble_add_configurator_serv(); // adding simple BLE chat service
+
+  // registering the GAP callback functions
+  rsi_ble_gap_register_callbacks(NULL,
+                                 rsi_ble_on_connect_event,
+                                 rsi_ble_on_disconnect_event,
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 rsi_ble_on_enhance_conn_status_event,
+                                 NULL,
+                                 NULL,
+                                 NULL);
+
+  // registering the GATT callback functions
+  rsi_ble_gatt_register_callbacks(NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  rsi_ble_on_gatt_write_event,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL,
+                                  NULL);
+
+  rsi_ble_smp_register_callbacks(rsi_ble_on_smp_request, // registering the SMP call back functions
+                                 rsi_ble_on_smp_response,
+                                 rsi_ble_on_smp_passkey,
+                                 rsi_ble_on_smp_failed,
+                                 rsi_ble_on_encrypt_started,
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 NULL,
+                                 NULL);
+
+  // Set local name
+  rsi_bt_set_local_name((uint8_t *)RSI_BLE_APP_DEVICE_NAME);
+
+  // prepare advertise data //local/device name
+  adv[3] = strlen(RSI_BLE_APP_DEVICE_NAME) + 1;
+  adv[4] = 9;
+  strcpy((char *)&adv[5], RSI_BLE_APP_DEVICE_NAME);
+
+  // set advertise data
+  rsi_ble_set_advertise_data(adv, strlen(RSI_BLE_APP_DEVICE_NAME) + 5);
+
+  // set device in advertising mode.
+  rsi_ble_start_advertising();
+}
+
 
 CHIP_ERROR BLEManagerImpl::_Init()
 {
@@ -149,36 +291,14 @@ CHIP_ERROR BLEManagerImpl::_Init()
     memset(mIndConfId, kUnusedIndex, sizeof(mIndConfId));
     mServiceMode = ConnectivityManager::kCHIPoBLEServiceMode_Enabled;
 
-    rsi_ble_add_simple_chat_serv3();
+    // Start Bluetooth Link Layer and stack tasks
+    ret =
+        bluetooth_start(CHIP_DEVICE_CONFIG_BLE_LL_TASK_PRIORITY, CHIP_DEVICE_CONFIG_BLE_STACK_TASK_PRIORITY, initialize_bluetooth);
+    VerifyOrExit(ret == SL_STATUS_OK, err = MapBLEError(ret));
 
-    // rsi_ble_device_info_add_new_serv();
-    // registering the GAP callback functions
-    rsi_ble_gap_register_callbacks(NULL, rsi_ble_on_connect_event, rsi_ble_on_disconnect_event, NULL, NULL, NULL,
-                                   rsi_ble_on_enhance_conn_status_event, NULL, NULL, NULL);
-    // registering the GATT call back functions
-  rsi_ble_gatt_register_callbacks(NULL,
-                                  NULL, /*rsi_ble_profile*/
-                                  NULL, /*rsi_ble_char_services*/
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  rsi_ble_on_gatt_write_event,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  rsi_ble_on_mtu_event,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  rsi_ble_on_event_indication_confirmation,
-                                  NULL);
+    rsi_ble_add_simple_chat_serv3();
+    rsi_ble_register_callback()
+
     //  initializing the application events map
     rsi_ble_app_init_events();
 
@@ -239,127 +359,7 @@ uint16_t BLEManagerImpl::_NumConnections(void)
 void BLEManagerImpl::bluetoothStackEventHandler(void * p_arg)
 {
     EventBits_t flags = 0;
-
-#if 0
-    while (1)
-    {
-        // wait for Bluetooth stack events, do not consume set flag
-        flags = xEventGroupWaitBits(bluetooth_event_flags,            /* The event group being tested. */
-                                    BLUETOOTH_EVENT_FLAG_EVT_WAITING, /* The bits within the event group to wait for. */
-                                    pdFALSE,                          /* Dont clear flags before returning */
-                                    pdFALSE,                          /* Any flag will do, dont wait for all flags to be set */
-                                    portMAX_DELAY);                   /* Wait for maximum duration for bit to be set */
-
-        if (flags & BLUETOOTH_EVENT_FLAG_EVT_WAITING)
-        {
-            flags &= ~BLUETOOTH_EVENT_FLAG_EVT_WAITING;
-            xEventGroupClearBits(bluetooth_event_flags, BLUETOOTH_EVENT_FLAG_EVT_WAITING);
-
-            // As this is running in a separate thread, we need to block CHIP from operating,
-            // until the events are handled.
-            PlatformMgr().LockChipStack();
-
-            // handle bluetooth events
-            switch (SL_BT_MSG_ID(bluetooth_evt->header))
-            {
-            case sl_bt_evt_system_boot_id: {
-                ChipLogProgress(DeviceLayer, "Bluetooth stack booted: v%d.%d.%d-b%d", bluetooth_evt->data.evt_system_boot.major,
-                                bluetooth_evt->data.evt_system_boot.minor, bluetooth_evt->data.evt_system_boot.patch,
-                                bluetooth_evt->data.evt_system_boot.build);
-                sInstance.HandleBootEvent();
-
-                RAIL_Version_t railVer;
-                RAIL_GetVersion(&railVer, true);
-                ChipLogProgress(DeviceLayer, "RAIL version:, v%d.%d.%d-b%d", railVer.major, railVer.minor, railVer.rev,
-                                railVer.build);
-                sl_bt_connection_set_default_parameters(BLE_CONFIG_MIN_INTERVAL, BLE_CONFIG_MAX_INTERVAL, BLE_CONFIG_LATENCY,
-                                                        BLE_CONFIG_TIMEOUT, BLE_CONFIG_MIN_CE_LENGTH, BLE_CONFIG_MAX_CE_LENGTH);
-            }
-            break;
-
-            case sl_bt_evt_connection_opened_id: {
-                sInstance.HandleConnectEvent(bluetooth_evt);
-            }
-            break;
-            case sl_bt_evt_connection_parameters_id: {
-                // ChipLogProgress(DeviceLayer, "Connection parameter ID received");
-            }
-            break;
-            case sl_bt_evt_connection_phy_status_id: {
-                // ChipLogProgress(DeviceLayer, "PHY update procedure is completed");
-            }
-            break;
-            case sl_bt_evt_connection_closed_id: {
-                sInstance.HandleConnectionCloseEvent(bluetooth_evt);
-            }
-            break;
-
-            /* This event indicates that a remote GATT client is attempting to write a value of an
-             * attribute in to the local GATT database, where the attribute was defined in the GATT
-             * XML firmware configuration file to have type="user".  */
-            case sl_bt_evt_gatt_server_attribute_value_id: {
-                sInstance.HandleWriteEvent(bluetooth_evt);
-            }
-            break;
-
-            case sl_bt_evt_gatt_mtu_exchanged_id: {
-                sInstance.UpdateMtu(bluetooth_evt);
-            }
-            break;
-
-            // confirmation of indication received from remote GATT client
-            case sl_bt_evt_gatt_server_characteristic_status_id: {
-                sl_bt_gatt_server_characteristic_status_flag_t StatusFlags;
-
-                StatusFlags = (sl_bt_gatt_server_characteristic_status_flag_t)
-                                  bluetooth_evt->data.evt_gatt_server_characteristic_status.status_flags;
-
-                if (sl_bt_gatt_server_confirmation == StatusFlags)
-                {
-                    sInstance.HandleTxConfirmationEvent(bluetooth_evt->data.evt_gatt_server_characteristic_status.connection);
-                }
-                else if ((bluetooth_evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_CHIPoBLEChar_Tx) &&
-                         (bluetooth_evt->data.evt_gatt_server_characteristic_status.status_flags == gatt_server_client_config))
-                {
-                    sInstance.HandleTXCharCCCDWrite(bluetooth_evt);
-                }
-            }
-            break;
-
-            /* Software Timer event */
-            case sl_bt_evt_system_soft_timer_id: {
-                sInstance.HandleSoftTimerEvent(bluetooth_evt);
-            }
-            break;
-
-            case sl_bt_evt_gatt_server_user_read_request_id: {
-                ChipLogProgress(DeviceLayer, "GATT server user_read_request");
-#if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
-                if (bluetooth_evt->data.evt_gatt_server_user_read_request.characteristic == gattdb_CHIPoBLEChar_C3)
-                {
-                    HandleC3ReadRequest(bluetooth_evt);
-                }
-#endif // CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
-            }
-            break;
-
-            case sl_bt_evt_connection_remote_used_features_id: {
-                // ChipLogProgress(DeviceLayer, "link layer features supported by the remote device");
-            }
-            break;
-
-            default:
-                ChipLogProgress(DeviceLayer, "evt_UNKNOWN id = %08" PRIx32, SL_BT_MSG_ID(bluetooth_evt->header));
-                break;
-            }
-        }
-
-        PlatformMgr().UnlockChipStack();
-
-        vRaiseEventFlagBasedOnContext(bluetooth_event_flags, BLUETOOTH_EVENT_FLAG_EVT_HANDLED);
-    }
-#endif
-// waiting for events from controller.
+    // waiting for events from controller.
     while (1)
     {
         // checking for events list
@@ -669,7 +669,6 @@ exit:
 
 CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
 {
-    sl_status_t ret;
     ChipBLEDeviceIdentificationInfo mDeviceIdInfo;
     CHIP_ERROR err;
     uint8_t responseData[MAX_RESPONSE_DATA_LEN];
@@ -721,53 +720,34 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
     ReturnErrorOnFailure(EncodeAdditionalDataTlv());
 #endif
 
-    if (0xff != advertising_set_handle)
-    {
-        sl_bt_advertiser_delete_set(advertising_set_handle);
-        advertising_set_handle = 0xff;
-    }
-
-    ret = sl_bt_advertiser_create_set(&advertising_set_handle);
+    int32_t ret = rsi_ble_set_advertise_data(advData, index);
     if (ret != SL_STATUS_OK)
     {
-        err = MapBLEError(ret);
-        ChipLogError(DeviceLayer, "sl_bt_advertiser_create_set() failed: %s", ErrorStr(err));
-        ExitNow();
-    }
-    ret = sl_bt_advertiser_set_data(advertising_set_handle, CHIP_ADV_DATA, index, (uint8_t *) advData);
-
-    if (ret != SL_STATUS_OK)
-    {
-        err = MapBLEError(ret);
-        ChipLogError(DeviceLayer, "sl_bt_advertiser_set_data() failed: %s", ErrorStr(err));
+        //err = MapBLEError(ret);  //TODO
+        ChipLogError(DeviceLayer, "rsi_ble_set_advertise_data() failed: %d", ret);
         ExitNow();
     }
 
     index = 0;
-
     responseData[index++] = CHIP_ADV_SHORT_UUID_LEN + 1;  // AD length
     responseData[index++] = CHIP_ADV_DATA_TYPE_UUID;      // AD type : uuid
     responseData[index++] = ShortUUID_CHIPoBLEService[0]; // AD value
     responseData[index++] = ShortUUID_CHIPoBLEService[1];
-
     responseData[index++] = static_cast<uint8_t>(mDeviceNameLength + 1); // length
     responseData[index++] = CHIP_ADV_DATA_TYPE_NAME;                     // AD type : name
     memcpy(&responseData[index], mDeviceName, mDeviceNameLength);        // AD value
     index += mDeviceNameLength;
 
-    ret = sl_bt_advertiser_set_data(advertising_set_handle, CHIP_ADV_SCAN_RESPONSE_DATA, index, (uint8_t *) responseData);
-
+    int32_t ret = rsi_ble_set_advertise_data(advData, index);
     if (ret != SL_STATUS_OK)
     {
-        err = MapBLEError(ret);
-        ChipLogError(DeviceLayer, "sl_bt_advertiser_set_data() failed: %s", ErrorStr(err));
+        //err = MapBLEError(ret);  //TODO
+        ChipLogError(DeviceLayer, "rsi_ble_set_advertise_data() failed: %d", ret);
         ExitNow();
     }
 
-    err = MapBLEError(ret);
-
 exit:
-    return err;
+    return ret;
 }
 
 CHIP_ERROR BLEManagerImpl::StartAdvertising(void)
@@ -783,7 +763,7 @@ CHIP_ERROR BLEManagerImpl::StartAdvertising(void)
     // If already advertising, stop it, before changing values
     if (mFlags.Has(Flags::kAdvertising))
     {
-        sl_bt_advertiser_stop(advertising_set_handle);
+        rsi_ble_stop_advertising();
     }
     else
     {
