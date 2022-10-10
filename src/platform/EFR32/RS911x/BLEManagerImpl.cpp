@@ -32,11 +32,11 @@
 
 #include "FreeRTOS.h"
 #include "rail.h"
+#include "rsi_driver.h"
 #include "sl_bt_api.h"
 #include "sl_bt_stack_config.h"
 #include "sl_bt_stack_init.h"
 #include "timers.h"
-#include "rsi_driver.h"
 
 // Error include files
 #include "rsi_error.h"
@@ -49,15 +49,15 @@
 #include "rsi_board.h"
 #endif
 
-//BLE Specific inclusions
-#include <rsi_ble_apis.h>
-#include <rsi_ble_config.h>
+// BLE Specific inclusions
 #include <ble/CHIPBleServiceData.h>
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
 #include <platform/CommissionableDataProvider.h>
 #include <platform/DeviceInstanceInfoProvider.h>
 #include <platform/EFR32/freertos_bluetooth.h>
+#include <rsi_ble_apis.h>
+#include <rsi_ble_config.h>
 
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
 #include <setup_payload/AdditionalDataPayloadGenerator.h>
@@ -68,12 +68,12 @@
 
 #ifdef RSI_WITH_OS
 #define RSI_APPLICATION_TASK_PRIORITY 1
-#define RSI_BLE_TASK_PRIORITY         2
-#define RSI_DRIVER_TASK_PRIORITY      3
+#define RSI_BLE_TASK_PRIORITY 2
+#define RSI_DRIVER_TASK_PRIORITY 3
 
 #define RSI_APPLICATION_TASK_STACK_SIZE 1000
-#define RSI_BLE_TASK_STACK_SIZE         1000
-#define RSI_DRIVER_TASK_STACK_SIZE      2000
+#define RSI_BLE_TASK_STACK_SIZE 1000
+#define RSI_DRIVER_TASK_STACK_SIZE 2000
 #endif
 
 // Wlan client mode
@@ -132,8 +132,8 @@ namespace {
 #define BLE_CONFIG_MIN_INTERVAL (16) // Time = Value x 1.25 ms = 30ms
 #define BLE_CONFIG_MAX_INTERVAL (80) // Time = Value x 1.25 ms = 100ms
 #define BLE_CONFIG_LATENCY (0)
-#define BLE_CONFIG_TIMEOUT (100)          // Time = Value x 10 ms = 1s
-#define BLE_CONFIG_MIN_CE_LENGTH (0)      // Leave to min value
+#define BLE_CONFIG_TIMEOUT (100) // Time = Value x 10 ms = 1s
+#define BLE_CONFIG_MIN_CE_LENGTH (0) // Leave to min value
 #define BLE_CONFIG_MAX_CE_LENGTH (0xFFFF) // Leave to max value
 
 TimerHandle_t sbleAdvTimeoutTimer; // FreeRTOS sw timer.
@@ -176,7 +176,6 @@ extern "C" sl_status_t initialize_bluetooth()
     return err;
 }
 
-
 /*==============================================*/
 /**
  * @fn         rsi_ble_app_init_events
@@ -194,7 +193,6 @@ static void rsi_ble_app_init_events()
     return;
 }
 
-
 /*==============================================*/
 /**
  * @fn         rsi_ble_app_init
@@ -206,77 +204,39 @@ static void rsi_ble_app_init_events()
  */
 void rsi_ble_configurator_init(void)
 {
-  uint8_t adv[31] = { 2, 1, 6 };
+    uint8_t adv[31] = { 2, 1, 6 };
 
-  //  initializing the application events map
-  rsi_ble_app_init_events();
+    //  initializing the application events map
+    rsi_ble_app_init_events();
 
-  rsi_ble_add_configurator_serv(); // adding simple BLE chat service
+    rsi_ble_add_configurator_serv(); // adding simple BLE chat service
 
-  // registering the GAP callback functions
-  rsi_ble_gap_register_callbacks(NULL,
-                                 rsi_ble_on_connect_event,
-                                 rsi_ble_on_disconnect_event,
-                                 NULL,
-                                 NULL,
-                                 NULL,
-                                 rsi_ble_on_enhance_conn_status_event,
-                                 NULL,
-                                 NULL,
-                                 NULL);
+    // registering the GAP callback functions
+    rsi_ble_gap_register_callbacks(NULL, rsi_ble_on_connect_event, rsi_ble_on_disconnect_event, NULL, NULL, NULL,
+                                   rsi_ble_on_enhance_conn_status_event, NULL, NULL, NULL);
 
-  // registering the GATT callback functions
-  rsi_ble_gatt_register_callbacks(NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  rsi_ble_on_gatt_write_event,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL);
+    // registering the GATT callback functions
+    rsi_ble_gatt_register_callbacks(NULL, NULL, NULL, NULL, NULL, NULL, NULL, rsi_ble_on_gatt_write_event, NULL, NULL, NULL, NULL,
+                                    NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
-  rsi_ble_smp_register_callbacks(rsi_ble_on_smp_request, // registering the SMP call back functions
-                                 rsi_ble_on_smp_response,
-                                 rsi_ble_on_smp_passkey,
-                                 rsi_ble_on_smp_failed,
-                                 rsi_ble_on_encrypt_started,
-                                 NULL,
-                                 NULL,
-                                 NULL,
-                                 NULL,
-                                 NULL,
-                                 NULL);
+    rsi_ble_smp_register_callbacks(rsi_ble_on_smp_request, // registering the SMP call back functions
+                                   rsi_ble_on_smp_response, rsi_ble_on_smp_passkey, rsi_ble_on_smp_failed,
+                                   rsi_ble_on_encrypt_started, NULL, NULL, NULL, NULL, NULL, NULL);
 
-  // Set local name
-  rsi_bt_set_local_name((uint8_t *)RSI_BLE_APP_DEVICE_NAME);
+    // Set local name
+    rsi_bt_set_local_name((uint8_t *) RSI_BLE_APP_DEVICE_NAME);
 
-  // prepare advertise data //local/device name
-  adv[3] = strlen(RSI_BLE_APP_DEVICE_NAME) + 1;
-  adv[4] = 9;
-  strcpy((char *)&adv[5], RSI_BLE_APP_DEVICE_NAME);
+    // prepare advertise data //local/device name
+    adv[3] = strlen(RSI_BLE_APP_DEVICE_NAME) + 1;
+    adv[4] = 9;
+    strcpy((char *) &adv[5], RSI_BLE_APP_DEVICE_NAME);
 
-  // set advertise data
-  rsi_ble_set_advertise_data(adv, strlen(RSI_BLE_APP_DEVICE_NAME) + 5);
+    // set advertise data
+    rsi_ble_set_advertise_data(adv, strlen(RSI_BLE_APP_DEVICE_NAME) + 5);
 
-  // set device in advertising mode.
-  rsi_ble_start_advertising();
+    // set device in advertising mode.
+    rsi_ble_start_advertising();
 }
-
 
 CHIP_ERROR BLEManagerImpl::_Init()
 {
@@ -299,10 +259,10 @@ CHIP_ERROR BLEManagerImpl::_Init()
     rsi_ble_add_simple_chat_serv3();
     rsi_ble_register_callback()
 
-    //  initializing the application events map
-    rsi_ble_app_init_events();
+        //  initializing the application events map
+        rsi_ble_app_init_events();
 
-//EFR
+// EFR
 #if 0
     // Start Bluetooth Link Layer and stack tasks
     ret =
@@ -310,11 +270,9 @@ CHIP_ERROR BLEManagerImpl::_Init()
 
     VerifyOrExit(ret == SL_STATUS_OK, err = MapBLEError(ret));
 #endif
-//End EFR
+    // End EFR
 
-    //Init BLE
-
-
+    // Init BLE
 
     // Create the Bluetooth Application task
     BluetoothEventTaskHandle =
@@ -404,8 +362,8 @@ void BLEManagerImpl::bluetoothStackEventHandler(void * p_arg)
         }
         break;
         default:
-             ChipLogProgress(DeviceLayer, "evt_UNKNOWN id = %08" PRIx32, SL_BT_MSG_ID(bluetooth_evt->header));
-             break;
+            ChipLogProgress(DeviceLayer, "evt_UNKNOWN id = %08" PRIx32, SL_BT_MSG_ID(bluetooth_evt->header));
+            break;
         }
     }
     PlatformMgr().UnlockChipStack();
@@ -723,12 +681,12 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
     int32_t ret = rsi_ble_set_advertise_data(advData, index);
     if (ret != SL_STATUS_OK)
     {
-        //err = MapBLEError(ret);  //TODO
+        // err = MapBLEError(ret);  //TODO
         ChipLogError(DeviceLayer, "rsi_ble_set_advertise_data() failed: %d", ret);
         ExitNow();
     }
 
-    index = 0;
+    index                 = 0;
     responseData[index++] = CHIP_ADV_SHORT_UUID_LEN + 1;  // AD length
     responseData[index++] = CHIP_ADV_DATA_TYPE_UUID;      // AD type : uuid
     responseData[index++] = ShortUUID_CHIPoBLEService[0]; // AD value
@@ -741,7 +699,7 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
     int32_t ret = rsi_ble_set_advertise_data(advData, index);
     if (ret != SL_STATUS_OK)
     {
-        //err = MapBLEError(ret);  //TODO
+        // err = MapBLEError(ret);  //TODO
         ChipLogError(DeviceLayer, "rsi_ble_set_advertise_data() failed: %d", ret);
         ExitNow();
     }

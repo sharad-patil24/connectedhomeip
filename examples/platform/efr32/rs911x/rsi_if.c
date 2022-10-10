@@ -313,6 +313,7 @@ static int32_t wfx_rsi_init(void)
         return status;
     }
     WFX_RSI_LOG("%s: start wireless drv task", __func__);
+
     /*
      * Create the driver task
      */
