@@ -73,7 +73,7 @@ bool hasNotifiedWifiConnectivity = false;
 static uint8_t wfx_rsi_drv_buf[WFX_RSI_BUF_SZ];
 wfx_wifi_scan_ext_t * temp_reset;
 uint8_t security;
-
+static int32_t wfx_rsi_init_1(void);
 /******************************************************************
  * @fn   int32_t wfx_rsi_get_ap_info(wfx_wifi_scan_result_t *ap)
  * @brief
@@ -293,6 +293,7 @@ static void wfx_rsi_wlan_pkt_cb(uint16_t status, uint8_t * buf, uint32_t len)
 static int32_t wfx_rsi_init(void)
 {
     int32_t status;
+
     uint8_t buf[RSI_RESPONSE_HOLD_BUFF_SIZE];
     extern void rsi_hal_board_init(void);
 
@@ -381,6 +382,8 @@ static int32_t wfx_rsi_init(void)
         return status;
     }
 #endif
+
+
     wfx_rsi.dev_state |= WFX_RSI_ST_DEV_READY;
     WFX_RSI_LOG("%s: RSI: OK", __func__);
     return RSI_SUCCESS;
@@ -523,14 +526,14 @@ void wfx_rsi_task(void * arg)
     struct netif * sta_netif;
 #endif
     (void) arg;
- #if 0
+
     uint32_t rsi_status = wfx_rsi_init();
     if (rsi_status != RSI_SUCCESS)
     {
         WFX_RSI_LOG("%s: error: wfx_rsi_init with status: %02x", __func__, rsi_status);
         return;
     }
-#endif
+
 #ifndef RS911X_SOCKETS
     wfx_lwip_start();
     last_dhcp_poll = xTaskGetTickCount();
@@ -853,12 +856,22 @@ int32_t wfx_rsi_send_data(void * p, uint16_t len)
 
 struct wfx_rsi wfx_rsi;
 
+
+void rsi_init_task(void * arg)
+{
+   uint32_t rsi_status = wfx_rsi_init_1();
+    if (rsi_status != RSI_SUCCESS)
+    {
+        WFX_RSI_LOG("%s: error: wfx_rsi_init with status: %02x", __func__, rsi_status);
+        return;
+    }
+}
 void wfx_rsi_init_platform()
 {
-  uint32_t rsi_status = wfx_rsi_init();
-  if (rsi_status != RSI_SUCCESS)
-  {
-      WFX_RSI_LOG("%s: error: wfx_rsi_init with status: %02x", __func__, rsi_status);
-      return;
-  }
+    /*init task - RS911x*/
+    WFX_RSI_LOG("WFX:Start ble task");
+    if (xTaskCreate((TaskFunction_t) rsi_init_task, "rsi_init", WFX_RSI_TASK_SZ, NULL, 1, &wfx_rsi.init_task) != pdPASS)
+    {
+        WFX_RSI_LOG("ERR: RSI ble task create");
+    }
 }
