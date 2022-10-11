@@ -871,7 +871,7 @@ def pipeline()
         } else {
             openThreadBoards = ["BRD4161A", "BRD4166A", "BRD4187C", "BRD2703A","BRD4316A", "BRD4319A" ]
         }
-        def openThreadApps = ["lighting-app", "lock-app", "light-switch-app", "window-app"]
+        def openThreadApps = ["lighting-app", "lock-app", "light-switch-app", "window-app", "thermostat"]
 
         openThreadApps.each { appName ->
             openThreadBoards.each { board ->
