@@ -18,6 +18,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <rsi_bt_common.h>
+#include <rsi_bt_common_apis.h>
+#include <rsi_common_apis.h>
 
 #include "em_bus.h"
 #include "em_cmu.h"
@@ -47,6 +50,7 @@
 //#include "rsi_wlan_non_rom.h"
 #include "rsi_bootup_config.h"
 #include "rsi_error.h"
+#include "wfx_sl_ble_init.h"
 
 #include "dhcp_client.h"
 #include "wfx_host_events.h"
@@ -849,4 +853,26 @@ int32_t wfx_rsi_send_data(void * p, uint16_t len)
     return status;
 }
 
+
+
 struct wfx_rsi wfx_rsi;
+
+void rsi_init_task(void * arg)
+{
+   uint32_t rsi_status = wfx_sl_module_init();
+    if (rsi_status != RSI_SUCCESS)
+    {
+        WFX_RSI_LOG("%s: error: wfx_sl_module_init with status: %02x", __func__, rsi_status);
+        return;
+    }
+}
+
+void wfx_rsi_init_platform()
+{
+    /*init task - RS911x*/
+    WFX_RSI_LOG("WFX:Start ble task");
+    if (xTaskCreate((TaskFunction_t) rsi_init_task, "rsi_init", WFX_RSI_TASK_SZ, NULL, 1, &wfx_rsi.init_task) != pdPASS)
+    {
+        WFX_RSI_LOG("ERR: RSI ble task create");
+    }
+}

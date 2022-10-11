@@ -276,6 +276,7 @@ void wfx_lwip_set_sta_link_up(void);
 void wfx_lwip_set_sta_link_down(void);
 void wfx_lwip_start(void);
 struct netif * wfx_get_netif(sl_wfx_interface_t interface);
+struct netif * wfx_get_netif(sl_wfx_interface_t interface);
 void wfx_dhcp_got_ipv4(uint32_t);
 bool wfx_hw_ready(void);
 void wfx_ip_changed_notify(int got_ip);

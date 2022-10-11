@@ -23,6 +23,7 @@
 #include "init_efrPlatform.h"
 #include "sl_simple_button_instances.h"
 #include "sl_system_kernel.h"
+#include "wfx_host_events.h"
 #include <DeviceInfoProviderImpl.h>
 #include <app/server/Server.h>
 #include <credentials/DeviceAttestationCredsProvider.h>
@@ -50,6 +51,7 @@ static chip::DeviceLayer::DeviceInfoProviderImpl gExampleDeviceInfoProvider;
 int main(void)
 {
     init_efrPlatform();
+    wfx_wifi_start();
     if (EFR32MatterConfig::InitMatter(BLE_DEV_NAME) != CHIP_NO_ERROR)
         appError(CHIP_ERROR_INTERNAL);
 
