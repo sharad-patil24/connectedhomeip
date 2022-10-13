@@ -80,7 +80,7 @@ int32_t wfx_sl_module_init(void)
 
     /* Initialize WiSeConnect or Module features. */
     WFX_RSI_LOG("%s: rsi_wireless_init", __func__);
-    if ((status = rsi_wireless_init(OPER_MODE_0, COEX_MODE_0)) != RSI_SUCCESS)
+    if ((status = rsi_wireless_init(OPER_MODE_0, RSI_OPERMODE_WLAN_BLE)) != RSI_SUCCESS)
     {
         WFX_RSI_LOG("%s: error: rsi_wireless_init failed with status: %02x", __func__, status);
         return status;
