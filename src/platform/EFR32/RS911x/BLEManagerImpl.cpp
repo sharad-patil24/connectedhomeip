@@ -40,9 +40,12 @@ extern "C" {
 #include "sl_bluetooth.h"
 #include "FreeRTOS.h"
 #include "event_groups.h"
+#include "wfx_rsi.h"
 #include "task.h"
 #include "timers.h"
 #include "wfx_host_events.h"
+
+#include "wfx_sl_ble_init.h"
 
 
 #include <rsi_driver.h>
@@ -145,6 +148,7 @@ BLEManagerImpl BLEManagerImpl::sInstance;
 CHIP_ERROR BLEManagerImpl::_Init()
 {
     CHIP_ERROR err;
+    ChipLogProgress(DeviceLayer,"_Init()");
   //  sl_status_t ret;
 
     // Initialize the CHIP BleLayer.
@@ -154,6 +158,11 @@ CHIP_ERROR BLEManagerImpl::_Init()
     memset(mBleConnections, 0, sizeof(mBleConnections));
     memset(mIndConfId, kUnusedIndex, sizeof(mIndConfId));
     mServiceMode = ConnectivityManager::kCHIPoBLEServiceMode_Enabled;
+
+    if (xTaskCreate((TaskFunction_t) rsi_ble_task, "rsi_ble", WFX_RSI_TASK_SZ, NULL, 1, &wfx_rsi.ble_task) != pdPASS)
+    {
+        WFX_RSI_LOG("ERR: RSI ble task create");
+    }
 
     // Create FreeRTOS sw timer for BLE timeouts and interval change.
     sbleAdvTimeoutTimer = xTimerCreate("BleAdvTimer",       // Just a text name, not used by the RTOS kernel
@@ -176,6 +185,7 @@ CHIP_ERROR BLEManagerImpl::_Init()
 exit:
     return err;
 }
+
 
 uint16_t BLEManagerImpl::_NumConnections(void)
 {
@@ -451,9 +461,10 @@ exit:
 
 CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
 {
-    ChipBLEDeviceIdentificationInfo mDeviceIdInfo;
+
+   ChipBLEDeviceIdentificationInfo mDeviceIdInfo;
     CHIP_ERROR err;
-    int32_t result;
+   int32_t result;
     uint8_t responseData[MAX_RESPONSE_DATA_LEN];
     uint8_t advData[MAX_ADV_DATA_LEN];
     uint32_t index              = 0;
@@ -506,10 +517,15 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
     result = rsi_ble_set_advertise_data(advData, index);
     if (result != SL_STATUS_OK)
     {
-        //err = MapBLEError(ret);
-        ChipLogError(DeviceLayer, "sl_bt_advertiser_create_set() failed: %ld", result);
+        err = MapBLEError(result);
+        ChipLogError(DeviceLayer, "rsi_ble_set_advertise_data() failed: %ld", result);
         ExitNow();
     }
+    else
+    {
+        ChipLogError(DeviceLayer, "rsi_ble_set_advertise_data() success: %ld", result);
+    }
+
 
     index = 0;
 

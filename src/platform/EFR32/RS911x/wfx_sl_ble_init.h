@@ -55,6 +55,12 @@
 #endif
 
 int32_t wfx_sl_module_init(void);
-
+#ifdef __cplusplus
+extern "C" {
+#endif
+void rsi_ble_task(void * arg);
+#ifdef __cplusplus
+}
+#endif
 
 #endif
