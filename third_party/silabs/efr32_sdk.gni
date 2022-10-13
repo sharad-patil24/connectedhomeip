@@ -20,6 +20,8 @@ import("//build_overrides/mbedtls.gni")
 import("${chip_root}/src/lib/lib.gni")
 import("silabs_board.gni")
 
+wiseconnect_sdk_root = "${chip_root}/third_party/silabs/wiseconnect-wifi-bt-sdk"
+
 declare_args() {
   # Location of the efr32 SDK.
   efr32_sdk_root = "${chip_root}/third_party/silabs/gecko_sdk"
@@ -158,6 +160,9 @@ template("efr32_sdk") {
       "${efr32_sdk_root}/util/third_party/freertos/kernel/include",
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/config",
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen",
+      "${chip_root}/examples/platform/efr32/rs911x",
+      "${chip_root}/examples/platform/efr32/rs911x/hal",
+      "${chip_root}/third_party/silabs/wiseconnect-wifi-bt-sdk/sapi/include",
     ]
 
     # Note that we're setting the mbedTLS and PSA configuration files through a
@@ -193,6 +198,7 @@ template("efr32_sdk") {
       "USE_NVM3=1",
 
       #"__STACK_SIZE=0",
+      "RSI_BLE_ENABLE=1",
     ]
 
     defines += board_defines
@@ -569,6 +575,10 @@ template("efr32_sdk") {
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_device_init_clocks.c",
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_event_handler.c",
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_simple_button_instances.c",
+      "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_ble_gap_apis.c",
+      "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_bt_common_apis.c",
+      "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_ble_gatt_apis.c",
+      "${wiseconnect_sdk_root}/sapi/driver/rsi_bt_ble.c",
     ]
 
     if (use_wstk_leds) {
