@@ -59,10 +59,6 @@ rs911x_src_sapi = [
   "${wiseconnect_sdk_root}/sapi/driver/rsi_utils.c",
   "${wiseconnect_sdk_root}/sapi/driver/rsi_wlan.c",
   "${wiseconnect_sdk_root}/sapi/rtos/freertos_wrapper/rsi_os_wrapper.c",
-  "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_ble_gap_apis.c",
-  "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_bt_common_apis.c",
-  "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_ble_gatt_apis.c",
-  "${wiseconnect_sdk_root}/sapi/driver/rsi_bt_ble.c",
 ]
 
 foreach(src_file, rs911x_src_sapi) {
@@ -100,8 +96,8 @@ rs911x_defs = [
   "RSI_WLAN_ENABLE",
   "RSI_SPI_INTERFACE",
   "RSI_WITH_OS",
-  "RSI_BLE_ENABLE",
 ]
+
 rs911x_sock_defs = [
   "RS911X_SOCKETS",
   "RSI_IPV6_ENABLE",

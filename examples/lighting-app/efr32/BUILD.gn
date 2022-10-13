@@ -185,6 +185,10 @@ efr32_executable("lighting_app") {
     "src/LightingManager.cpp",
     "src/ZclCallbacks.cpp",
     "src/main.cpp",
+  "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_ble_gap_apis.c",
+  "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_bt_common_apis.c",
+  "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_ble_gatt_apis.c",
+  "${wiseconnect_sdk_root}/sapi/driver/rsi_bt_ble.c",
   ]
 
   if (use_wstk_leds) {

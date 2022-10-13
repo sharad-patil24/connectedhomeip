@@ -22,7 +22,9 @@
  *          for the Silicon Labs EFR32 platforms.
  */
 
+
 #pragma once
+
 #if CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
 
 #include "FreeRTOS.h"
@@ -30,6 +32,7 @@
 #include "sl_bgapi.h"
 #include "sl_bt_api.h"
 #include "timers.h"
+
 
 namespace chip {
 namespace DeviceLayer {
@@ -147,9 +150,17 @@ private:
 
     CHIP_ERROR MapBLEError(int bleErr);
     void DriveBLEState(void);
+#ifdef __cplusplus
+extern "C" {
+#endif
     CHIP_ERROR ConfigureAdvertisingData(void);
     CHIP_ERROR StartAdvertising(void);
     CHIP_ERROR StopAdvertising(void);
+
+#ifdef __cplusplus
+}
+#endif
+
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
     CHIP_ERROR EncodeAdditionalDataTlv();
 #endif
@@ -199,5 +210,9 @@ inline bool BLEManagerImpl::_IsAdvertisingEnabled(void)
 } // namespace Internal
 } // namespace DeviceLayer
 } // namespace chip
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
