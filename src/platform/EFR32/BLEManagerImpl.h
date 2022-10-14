@@ -144,11 +144,15 @@ private:
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
     PacketBufferHandle c3AdditionalDataBufferHandle;
 #endif
-
-    CHIP_ERROR MapBLEError(int bleErr);
+public:
     void DriveBLEState(void);
-    CHIP_ERROR ConfigureAdvertisingData(void);
     CHIP_ERROR StartAdvertising(void);
+
+private:
+    CHIP_ERROR MapBLEError(int bleErr);
+//    void DriveBLEState(void);
+    CHIP_ERROR ConfigureAdvertisingData(void);
+    //CHIP_ERROR StartAdvertising(void);
     CHIP_ERROR StopAdvertising(void);
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
     CHIP_ERROR EncodeAdditionalDataTlv();

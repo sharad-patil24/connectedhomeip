@@ -55,12 +55,30 @@
 #endif
 
 int32_t wfx_sl_module_init(void);
-#ifdef __cplusplus
-extern "C" {
-#endif
+void rsi_ble_on_connect_event(rsi_ble_event_conn_status_t * resp_conn);
+void rsi_ble_on_disconnect_event(rsi_ble_event_disconnect_t *resp_disconnect, uint16_t reason);
+void rsi_ble_on_enhance_conn_status_event(rsi_ble_event_enhance_conn_status_t *resp_enh_conn);
+void rsi_ble_on_gatt_write_event(uint16_t event_id, rsi_ble_event_write_t *rsi_ble_write);
+void rsi_ble_on_mtu_event(rsi_ble_event_mtu_t * rsi_ble_mtu);
+void rsi_ble_on_event_indication_confirmation(uint16_t resp_status, rsi_ble_set_att_resp_t * rsi_ble_event_set_att_rsp);
+void rsi_gatt_add_attribute_to_list(rsi_ble_t * p_val, uint16_t handle, uint16_t data_len, uint8_t * data, uuid_t uuid,
+                                    uint8_t char_prop);
+void rsi_ble_add_char_serv_att(void * serv_handler, uint16_t handle, uint8_t val_prop, uint16_t att_val_handle,
+                                      uuid_t att_val_uuid);
+void rsi_ble_add_char_val_att(void * serv_handler, uint16_t handle, uuid_t att_type_uuid, uint8_t val_prop, uint8_t * data,
+                                     uint8_t data_len, uint8_t auth_read);
+uint32_t rsi_ble_add_simple_chat_serv3(void);
+void rsi_ble_app_set_event(uint32_t event_num);
+int32_t rsi_ble_app_get_event(void);
+void rsi_ble_app_clear_event(uint32_t event_num);
+void rsi_ble_app_init_events();
 void rsi_ble_task(void * arg);
-#ifdef __cplusplus
-}
-#endif
+//#ifdef __cplusplus
+//extern "C" {
+//#endif
+//void rsi_ble_task(void * arg);
+//#ifdef __cplusplus
+//}
+//#endif
 
 #endif

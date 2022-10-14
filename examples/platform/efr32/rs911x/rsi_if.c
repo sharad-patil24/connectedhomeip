@@ -855,24 +855,24 @@ int32_t wfx_rsi_send_data(void * p, uint16_t len)
 
 struct wfx_rsi wfx_rsi;
 
-void rsi_init_task(void * arg)
-{
-   uint32_t rsi_status = wfx_sl_module_init();
-    if (rsi_status != RSI_SUCCESS)
-    {
-        WFX_RSI_LOG("%s: error: wfx_sl_module_init with status: %02x", __func__, rsi_status);
-        return;
-    }
-    WFX_RSI_LOG("After wfx_sl_module_init");
-    rsi_task_suspend((rsi_task_handle_t *)wfx_rsi.init_task);
-}
-
-void wfx_rsi_init_platform()
-{
-    /*init task - RS911x*/
-    WFX_RSI_LOG("WFX:Start ble task");
-    if (xTaskCreate((TaskFunction_t) rsi_init_task, "rsi_init", WFX_RSI_TASK_SZ, NULL, 39, &wfx_rsi.init_task) != pdPASS)
-    {
-        WFX_RSI_LOG("ERR: RSI ble task create");
-    }
-}
+//void rsi_init_task(void * arg)
+//{
+//   uint32_t rsi_status = wfx_sl_module_init();
+//    if (rsi_status != RSI_SUCCESS)
+//    {
+//        WFX_RSI_LOG("%s: error: wfx_sl_module_init with status: %02x", __func__, rsi_status);
+//        return;
+//    }
+//    WFX_RSI_LOG("After wfx_sl_module_init");
+//    rsi_task_suspend((rsi_task_handle_t *)wfx_rsi.init_task);
+//}
+//
+//void wfx_rsi_init_platform()
+//{
+//    /*init task - RS911x*/
+//    WFX_RSI_LOG("WFX:Start ble task");
+//    if (xTaskCreate((TaskFunction_t) rsi_init_task, "rsi_init", WFX_RSI_TASK_SZ, NULL, 54, &wfx_rsi.init_task) != pdPASS)
+//    {
+//        WFX_RSI_LOG("ERR: RSI ble task create");
+//    }
+//}

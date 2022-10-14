@@ -83,7 +83,7 @@ int32_t wfx_sl_module_init(void)
      * Create the driver task
      */
     wfx_rsi.drv_task = xTaskCreateStatic((TaskFunction_t) rsi_wireless_driver_task, "rsi_drv", WFX_RSI_WLAN_TASK_SZ, NULL,
-                                         WLAN_TASK_PRIORITY, driverRsiTaskStack, &driverRsiTaskBuffer);
+                                         53, driverRsiTaskStack, &driverRsiTaskBuffer);
     if (NULL == wfx_rsi.drv_task)
     {
         WFX_RSI_LOG("%s: error: rsi_wireless_driver_task failed", __func__);
@@ -126,6 +126,16 @@ int32_t wfx_sl_module_init(void)
         WFX_RSI_LOG("%s: error: rsi_wlan_get failed with status: %02x", __func__, status);
         return status;
     }
+
+    WFX_RSI_LOG("%s: rsi_task_suspend init_task ", __func__);
+    if (xTaskCreate((TaskFunction_t) rsi_ble_task, "rsi_ble", WFX_RSI_TASK_SZ, NULL, 1, &wfx_rsi.ble_task) != pdPASS)
+    {
+        WFX_RSI_LOG("ERR: RSI ble task create");
+    }
+
+   // rsi_task_suspend((rsi_task_handle_t *)wfx_rsi.init_task);
+    rsi_task_destroy((rsi_task_handle_t *)wfx_rsi.init_task);
+    WFX_RSI_LOG("%s: wfx_sl_module_init complete", __func__);
     return RSI_SUCCESS;
 }
 
@@ -139,7 +149,7 @@ int32_t wfx_sl_module_init(void)
  * @section description
  * This function is used during BLE initialization.
  */
-static void rsi_ble_app_init_events()
+void rsi_ble_app_init_events()
 {
     ble_app_event_map  = 0;
     ble_app_event_mask = 0xFFFFFFFF;
@@ -157,7 +167,7 @@ static void rsi_ble_app_init_events()
  * @section description
  * This function is used to clear the specific event.
  */
-static void rsi_ble_app_clear_event(uint32_t event_num)
+void rsi_ble_app_clear_event(uint32_t event_num)
 {
     ble_app_event_map &= ~BIT(event_num);
     return;
@@ -174,7 +184,7 @@ static void rsi_ble_app_clear_event(uint32_t event_num)
  * @section description
  * This function returns the highest priority event among all the set events
  */
-static int32_t rsi_ble_app_get_event(void)
+int32_t rsi_ble_app_get_event(void)
 {
     uint32_t ix;
 
@@ -197,13 +207,13 @@ static int32_t rsi_ble_app_get_event(void)
  * @section description
  * This function is used to set/raise the specific event.
  */
-static void rsi_ble_app_set_event(uint32_t event_num)
+void rsi_ble_app_set_event(uint32_t event_num)
 {
   ble_app_event_map |= BIT(event_num);
   return;
 }
 
-static void rsi_ble_on_connect_event(rsi_ble_event_conn_status_t * resp_conn)
+void rsi_ble_on_connect_event(rsi_ble_event_conn_status_t * resp_conn)
 {
    rsi_ble_app_set_event(RSI_BLE_CONN_EVENT);
 }
@@ -235,7 +245,7 @@ void rsi_ble_on_enhance_conn_status_event(rsi_ble_event_enhance_conn_status_t *r
  * @section description
  * This callback function indicates disconnected device information and status
  */
-static void rsi_ble_on_disconnect_event(rsi_ble_event_disconnect_t *resp_disconnect, uint16_t reason)
+void rsi_ble_on_disconnect_event(rsi_ble_event_disconnect_t *resp_disconnect, uint16_t reason)
 {
   UNUSED_PARAMETER(reason); //This statement is added only to resolve compilation warning, value is unchanged
   memcpy(&disconn_event_to_app, resp_disconnect, sizeof(rsi_ble_event_disconnect_t));
@@ -252,7 +262,7 @@ static void rsi_ble_on_disconnect_event(rsi_ble_event_disconnect_t *resp_disconn
  * @section description
  * This callback function is invoked when write/notify/indication events are received
  */
-static void rsi_ble_on_gatt_write_event(uint16_t event_id, rsi_ble_event_write_t *rsi_ble_write)
+void rsi_ble_on_gatt_write_event(uint16_t event_id, rsi_ble_event_write_t *rsi_ble_write)
 {
   UNUSED_PARAMETER(event_id); //This statement is added only to resolve compilation warning, value is unchanged
 
@@ -269,7 +279,7 @@ static void rsi_ble_on_gatt_write_event(uint16_t event_id, rsi_ble_event_write_t
  * @section description
  * This callback function is invoked when  mtu exhange event is received
  */
-static void rsi_ble_on_mtu_event(rsi_ble_event_mtu_t * rsi_ble_mtu)
+void rsi_ble_on_mtu_event(rsi_ble_event_mtu_t * rsi_ble_mtu)
 {
    //set conn specific event
    rsi_ble_app_set_event(RSI_BLE_MTU_EVENT);
@@ -284,7 +294,7 @@ static void rsi_ble_on_mtu_event(rsi_ble_event_mtu_t * rsi_ble_mtu)
  * @return     none
  * @section description
  */
-static void rsi_ble_on_event_indication_confirmation(uint16_t resp_status, rsi_ble_set_att_resp_t * rsi_ble_event_set_att_rsp)
+void rsi_ble_on_event_indication_confirmation(uint16_t resp_status, rsi_ble_set_att_resp_t * rsi_ble_event_set_att_rsp)
 {
 UNUSED_PARAMETER(resp_status);
    // if(rsi_ble_event_set_att_rsp->dev_addr[RSI_DEV_ADDR_LEN]==)
@@ -340,7 +350,7 @@ void rsi_gatt_add_attribute_to_list(rsi_ble_t * p_val, uint16_t handle, uint16_t
  * @section description
  * This function is used at application to add characteristic attribute
  */
-static void rsi_ble_add_char_serv_att(void * serv_handler, uint16_t handle, uint8_t val_prop, uint16_t att_val_handle,
+void rsi_ble_add_char_serv_att(void * serv_handler, uint16_t handle, uint8_t val_prop, uint16_t att_val_handle,
                                       uuid_t att_val_uuid)
 {
     rsi_ble_req_add_att_t new_att = { 0 };
@@ -389,7 +399,7 @@ static void rsi_ble_add_char_serv_att(void * serv_handler, uint16_t handle, uint
  * This function is used at application to create new service.
  */
 
-static void rsi_ble_add_char_val_att(void * serv_handler, uint16_t handle, uuid_t att_type_uuid, uint8_t val_prop, uint8_t * data,
+void rsi_ble_add_char_val_att(void * serv_handler, uint16_t handle, uuid_t att_type_uuid, uint8_t val_prop, uint8_t * data,
                                      uint8_t data_len, uint8_t auth_read)
 {
     rsi_ble_req_add_att_t new_att = { 0 };
@@ -440,7 +450,7 @@ static void rsi_ble_add_char_val_att(void * serv_handler, uint16_t handle, uuid_
     return;
 }
 
-static uint32_t rsi_ble_add_simple_chat_serv3(void)
+uint32_t rsi_ble_add_simple_chat_serv3(void)
 {
     // volatile uint16_t rsi_ble_att2_val_hndl;
     // adding the custom service
@@ -696,94 +706,4 @@ static uint32_t rsi_ble_add_simple_chat_serv3(void)
 
      memset(&data1, 0, sizeof(data1));
     return 0;
-}
-
-void rsi_ble_task(void * arg)
-{
-  int32_t event_id;
-  WFX_RSI_LOG("In ble task ************");
-
-  // registering the GAP callback functions
-  rsi_ble_gap_register_callbacks(NULL, rsi_ble_on_connect_event, rsi_ble_on_disconnect_event, NULL, NULL, NULL,
-                                   rsi_ble_on_enhance_conn_status_event, NULL, NULL, NULL);
-      // registering the GATT call back functions
-  rsi_ble_gatt_register_callbacks(NULL,NULL, /*rsi_ble_profile*/
-                                  NULL, /*rsi_ble_char_services*/
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  rsi_ble_on_gatt_write_event,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  rsi_ble_on_mtu_event,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  NULL,
-                                  rsi_ble_on_event_indication_confirmation,
-                                  NULL);
-  rsi_ble_add_simple_chat_serv3();
-
-  //  initializing the application events map
-  rsi_ble_app_init_events();
-
-  while(1)
-  {
-   // checking for events list
-        event_id = rsi_ble_app_get_event();
-        if (event_id == -1)
-        {
-            continue;
-        }
-        switch (event_id)
-        {
-        case RSI_BLE_CONN_EVENT: {
-            rsi_ble_app_clear_event(RSI_BLE_CONN_EVENT);
-            WFX_RSI_LOG(" RSI_BLE : Module got connected");
-        }
-        break;
-        case RSI_BLE_DISCONN_EVENT: {
-            // event invokes when disconnection was completed
-            // clear the served event
-            rsi_ble_app_clear_event(RSI_BLE_DISCONN_EVENT);
-
-            WFX_RSI_LOG(" RSI_BLE : Module got Disconnected");
-           // status = rsi_ble_start_advertising();
-        }
-        break;
-        case RSI_BLE_MTU_EVENT: {
-            // event invokes when write/notification events received
-            WFX_RSI_LOG("RSI_BLE::In  mtu evt");
-            WFX_RSI_LOG("\n");
-            // clear the served event
-            rsi_ble_app_clear_event(RSI_BLE_MTU_EVENT);
-        }
-        break;
-        case RSI_BLE_GATT_WRITE_EVENT: {
-            // event invokes when write/notification events received
-            WFX_RSI_LOG("RSI_BLE : Write event");
-            // clear the served event
-            rsi_ble_app_clear_event(RSI_BLE_GATT_WRITE_EVENT);
-        }
-        break;
-        case RSI_BLE_GATT_INDICATION_CONFIRMATION: {
-            WFX_RSI_LOG("RSI_BLE : indication confirmation");
-        }
-        break;
-
-        case RSI_BLE_RESP_ATT_VALUE:
-        {
-            WFX_RSI_LOG("RSI_BLE : RESP_ATT confirmation");
-        }
-        default:
-            break;
-        }
-    }
 }

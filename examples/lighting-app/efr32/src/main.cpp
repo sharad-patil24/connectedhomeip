@@ -34,7 +34,7 @@
 #include <credentials/examples/DeviceAttestationCredsExample.h>
 #endif
 
-#define BLE_DEV_NAME "SiLabs-Light"
+#define BLE_DEV_NAME "Bhavani-BLE"
 using namespace ::chip;
 using namespace ::chip::Inet;
 using namespace ::chip::DeviceLayer;
