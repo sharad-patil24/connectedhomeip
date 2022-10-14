@@ -592,8 +592,25 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
     advData[index++] = CHIP_ADV_DATA_TYPE_SERVICE_DATA;                                         // AD type : Service Data
     advData[index++] = ShortUUID_CHIPoBLEService[0];                                            // AD value
     advData[index++] = ShortUUID_CHIPoBLEService[1];
-    memcpy(&advData[index], (void *) &mDeviceIdInfo, mDeviceIdInfoLength); // AD value
-    index += mDeviceIdInfoLength;
+
+    advData[index++] = 0;
+    advData[index++] = 0;
+    advData[index++] = 15;
+    advData[index++] = 241;
+    advData[index++] = 255;
+    advData[index++] = 5;
+    advData[index++] = 128;
+    advData[index++] = 0;
+
+    //! prepare advertise data //local/device name
+    advData[index++] = strlen(RSI_BLE_DEV_NAME) + 1;
+    advData[index++] = 9;
+
+    memcpy(&advData[index], RSI_BLE_DEV_NAME, strlen(RSI_BLE_DEV_NAME)); // AD value
+    index += strlen(RSI_BLE_DEV_NAME);
+
+    //memcpy(&advData[index], (void *) &mDeviceIdInfo, mDeviceIdInfoLength); // AD value
+    //index += mDeviceIdInfoLength;
 
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
     ReturnErrorOnFailure(EncodeAdditionalDataTlv());
@@ -611,19 +628,19 @@ CHIP_ERROR BLEManagerImpl::ConfigureAdvertisingData(void)
         ChipLogError(DeviceLayer, "rsi_ble_set_advertise_data() success: %ld", result);
     }
 
-    index = 0;
-
-    responseData[index++] = CHIP_ADV_SHORT_UUID_LEN + 1;  // AD length
-    responseData[index++] = CHIP_ADV_DATA_TYPE_UUID;      // AD type : uuid
-    responseData[index++] = ShortUUID_CHIPoBLEService[0]; // AD value
-    responseData[index++] = ShortUUID_CHIPoBLEService[1];
-
-    responseData[index++] = static_cast<uint8_t>(mDeviceNameLength + 1); // length
-    responseData[index++] = CHIP_ADV_DATA_TYPE_NAME;                     // AD type : name
-    memcpy(&responseData[index], mDeviceName, mDeviceNameLength);        // AD value
-    index += mDeviceNameLength;
-
-    result = rsi_ble_set_advertise_data(responseData, index);
+//    index = 0;
+//
+//    responseData[index++] = CHIP_ADV_SHORT_UUID_LEN + 1;  // AD length
+//    responseData[index++] = CHIP_ADV_DATA_TYPE_UUID;      // AD type : uuid
+//    responseData[index++] = ShortUUID_CHIPoBLEService[0]; // AD value
+//    responseData[index++] = ShortUUID_CHIPoBLEService[1];
+//
+//    responseData[index++] = static_cast<uint8_t>(mDeviceNameLength + 1); // length
+//    responseData[index++] = CHIP_ADV_DATA_TYPE_NAME;                     // AD type : name
+//    memcpy(&responseData[index], mDeviceName, mDeviceNameLength);        // AD value
+//    index += mDeviceNameLength;
+//
+//    result = rsi_ble_set_advertise_data(responseData, index);
     if (result != SL_STATUS_OK)
     {
         // err = MapBLEError(ret);  //TODO
