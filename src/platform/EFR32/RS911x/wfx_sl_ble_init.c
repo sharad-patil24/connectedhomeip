@@ -31,6 +31,7 @@
 
 #include "wfx_sl_ble_init.h"
 #include "rsi_ble_config.h"
+//#include "BLEManagerImpl.h"
 // application defines
 
 rsi_ble_t att_list;
@@ -252,38 +253,7 @@ void rsi_ble_on_disconnect_event(rsi_ble_event_disconnect_t *resp_disconnect, ui
   rsi_ble_app_set_event(RSI_BLE_DISCONN_EVENT);
 }
 
-/*==============================================*/
-/**
- * @fn         rsi_ble_on_gatt_write_event
- * @brief      its invoked when write/notify/indication events are received.
- * @param[in]  event_id, it indicates write/notification event id.
- * @param[in]  rsi_ble_write, write event parameters.
- * @return     none.
- * @section description
- * This callback function is invoked when write/notify/indication events are received
- */
-void rsi_ble_on_gatt_write_event(uint16_t event_id, rsi_ble_event_write_t *rsi_ble_write)
-{
-  UNUSED_PARAMETER(event_id); //This statement is added only to resolve compilation warning, value is unchanged
 
-  rsi_ble_app_set_event(RSI_BLE_GATT_WRITE_EVENT);
-  return;
-}
-
-/*==============================================*/
-/**
- * @fn         rsi_ble_on_mtu_event
- * @brief      its invoked when mtu exhange event is received.
- * @param[in]  rsi_ble_mtu, mtu event paramaters.
- * @return     none.
- * @section description
- * This callback function is invoked when  mtu exhange event is received
- */
-void rsi_ble_on_mtu_event(rsi_ble_event_mtu_t * rsi_ble_mtu)
-{
-   //set conn specific event
-   rsi_ble_app_set_event(RSI_BLE_MTU_EVENT);
-}
 
 /*==============================================*/
 /**

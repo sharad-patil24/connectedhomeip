@@ -31,6 +31,17 @@
 #include "sl_bt_api.h"
 #include "timers.h"
 
+extern "C" {
+#include <rsi_ble.h>
+#include <rsi_ble_apis.h>
+#include <rsi_ble_config.h>
+#include <rsi_bt_common.h>
+#include <rsi_bt_common_apis.h>
+//#include "wfx_sl_ble_init.h"
+
+}
+
+
 namespace chip {
 namespace DeviceLayer {
 namespace Internal {
@@ -45,10 +56,10 @@ class BLEManagerImpl final : public BLEManager, private BleLayer, private BlePla
 
 public:
     void HandleBootEvent(void);
-    void HandleConnectEvent(volatile sl_bt_msg_t * evt);
+    void HandleConnectEvent(void);//volatile sl_bt_msg_t * evt);
     void HandleConnectionCloseEvent(volatile sl_bt_msg_t * evt);
-    void HandleWriteEvent(volatile sl_bt_msg_t * evt);
-    void UpdateMtu(volatile sl_bt_msg_t * evt);
+    void HandleWriteEvent(rsi_ble_event_write_t * evt);
+    void UpdateMtu(rsi_ble_event_mtu_t * evt);
     void HandleTxConfirmationEvent(BLE_CONNECTION_OBJECT conId);
     void HandleTXCharCCCDWrite(volatile sl_bt_msg_t * evt);
     void HandleSoftTimerEvent(volatile sl_bt_msg_t * evt);
@@ -157,7 +168,7 @@ private:
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
     CHIP_ERROR EncodeAdditionalDataTlv();
 #endif
-    void HandleRXCharWrite(volatile sl_bt_msg_t * evt);
+    void HandleRXCharWrite(rsi_ble_event_write_t * evt);
     bool RemoveConnection(uint8_t connectionHandle);
     void AddConnection(uint8_t connectionHandle, uint8_t bondingHandle);
     void StartBleAdvTimeoutTimer(uint32_t aTimeoutInMs);

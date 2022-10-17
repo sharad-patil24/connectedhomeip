@@ -43,22 +43,15 @@ extern "C" {
 #include "timers.h"
 #include "wfx_host_events.h"
 #include "wfx_rsi.h"
-
 #include "wfx_sl_ble_init.h"
 
 #include <rsi_driver.h>
 #include <stdbool.h>
-//#include <rsi_wlan_non_rom.h>
-#include <rsi_ble.h>
-#include <rsi_ble_apis.h>
-#include <rsi_ble_config.h>
-#include <rsi_bt_common.h>
-#include <rsi_bt_common_apis.h>
-//#include <rsi_bootup_config.h>
-
-//#include <rsi_wlan_apis.h>
-//#include <rsi_wlan_config.h>
-//#include <rsi_common_apis.h>
+//#include <rsi_ble.h>
+//#include <rsi_ble_apis.h>
+//#include <rsi_ble_config.h>
+//#include <rsi_bt_common.h>
+//#include <rsi_bt_common_apis.h>
 #include <rsi_utils.h>
 }
 
@@ -79,6 +72,40 @@ extern "C" {
 
 using namespace ::chip;
 using namespace ::chip::Ble;
+
+/*==============================================*/
+/**
+ * @fn         rsi_ble_on_mtu_event
+ * @brief      its invoked when mtu exhange event is received.
+ * @param[in]  rsi_ble_mtu, mtu event paramaters.
+ * @return     none.
+ * @section description
+ * This callback function is invoked when  mtu exhange event is received
+ */
+void rsi_ble_on_mtu_event(rsi_ble_event_mtu_t * rsi_ble_mtu)
+{
+   //set conn specific event
+   chip::DeviceLayer::Internal::BLEMgrImpl().UpdateMtu(rsi_ble_mtu);
+   rsi_ble_app_set_event(RSI_BLE_MTU_EVENT);
+}
+
+/*==============================================*/
+/**
+ * @fn         rsi_ble_on_gatt_write_event
+ * @brief      its invoked when write/notify/indication events are received.
+ * @param[in]  event_id, it indicates write/notification event id.
+ * @param[in]  rsi_ble_write, write event parameters.
+ * @return     none.
+ * @section description
+ * This callback function is invoked when write/notify/indication events are received
+ */
+void rsi_ble_on_gatt_write_event(uint16_t event_id, rsi_ble_event_write_t *rsi_ble_write)
+{
+  UNUSED_PARAMETER(event_id); //This statement is added only to resolve compilation warning, value is unchanged
+  chip::DeviceLayer::Internal::BLEMgrImpl().HandleWriteEvent(rsi_ble_write);
+  rsi_ble_app_set_event(RSI_BLE_GATT_WRITE_EVENT);
+  return;
+}
 
 void rsi_ble_task(void * arg)
 {
@@ -112,6 +139,7 @@ void rsi_ble_task(void * arg)
         {
         case RSI_BLE_CONN_EVENT: {
             rsi_ble_app_clear_event(RSI_BLE_CONN_EVENT);
+            chip::DeviceLayer::Internal::BLEMgrImpl().HandleConnectEvent();
             WFX_RSI_LOG(" RSI_BLE : Module got connected");
         }
         break;
@@ -763,9 +791,9 @@ exit:
     return err;
 }
 
-void BLEManagerImpl::UpdateMtu(volatile sl_bt_msg_t * evt)
+void BLEManagerImpl::UpdateMtu(rsi_ble_event_mtu_t * evt)
 {
-    CHIPoBLEConState * bleConnState = GetConnectionState(evt->data.evt_gatt_mtu_exchanged.connection);
+    CHIPoBLEConState * bleConnState = GetConnectionState(1);
     if (bleConnState != NULL)
     {
         // bleConnState->MTU is a 10-bit field inside a uint16_t.  We're
@@ -777,9 +805,10 @@ void BLEManagerImpl::UpdateMtu(volatile sl_bt_msg_t * evt)
         // TODO: https://github.com/project-chip/connectedhomeip/issues/2569
         // tracks making this safe with a check or explaining why no check
         // is needed.
+        ChipLogProgress(DeviceLayer, "DriveBLEState UpdateMtu %d",  evt->mtu_size);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
-        bleConnState->mtu = evt->data.evt_gatt_mtu_exchanged.mtu;
+        bleConnState->mtu = evt->mtu_size;
 #pragma GCC diagnostic pop
         ;
     }
@@ -791,15 +820,15 @@ void BLEManagerImpl::HandleBootEvent(void)
     PlatformMgr().ScheduleWork(DriveBLEState, 0);
 }
 
-void BLEManagerImpl::HandleConnectEvent(volatile sl_bt_msg_t * evt)
+void BLEManagerImpl::HandleConnectEvent(void)//volatile sl_bt_msg_t * evt)
 {
-    sl_bt_evt_connection_opened_t * conn_evt = (sl_bt_evt_connection_opened_t *) &(evt->data);
-    uint8_t connHandle                       = conn_evt->connection;
-    uint8_t bondingHandle                    = conn_evt->bonding;
-
-    ChipLogProgress(DeviceLayer, "Connect Event for handle : %d", connHandle);
-
-    AddConnection(connHandle, bondingHandle);
+//    sl_bt_evt_connection_opened_t * conn_evt = (sl_bt_evt_connection_opened_t *) &(evt->data);
+//    uint8_t connHandle                       = conn_evt->connection;
+//    uint8_t bondingHandle                    = conn_evt->bonding;
+//
+    ChipLogProgress(DeviceLayer, "Connect Event for handle : 1");
+//
+    AddConnection(1, 255);
 
     PlatformMgr().ScheduleWork(DriveBLEState, 0);
 }
@@ -846,16 +875,14 @@ void BLEManagerImpl::HandleConnectionCloseEvent(volatile sl_bt_msg_t * evt)
     }
 }
 
-void BLEManagerImpl::HandleWriteEvent(volatile sl_bt_msg_t * evt)
+void BLEManagerImpl::HandleWriteEvent(rsi_ble_event_write_t * evt)
 {
-    uint16_t attribute = evt->data.evt_gatt_server_user_write_request.characteristic;
+    //uint16_t attribute = evt->data.evt_gatt_server_user_write_request.characteristic;
 
-    ChipLogProgress(DeviceLayer, "Char Write Req, char : %d", attribute);
+    ChipLogProgress(DeviceLayer, "Char Write Req, packet type %d", evt->pkt_type);
 
-    if (gattdb_CHIPoBLEChar_Rx == attribute)
-    {
-        HandleRXCharWrite(evt);
-    }
+    //RSI_BLE_WRITE_REQUEST_EVENT
+    HandleRXCharWrite(evt);
 }
 
 void BLEManagerImpl::HandleTXCharCCCDWrite(volatile sl_bt_msg_t * evt)
@@ -905,25 +932,24 @@ exit:
     }
 }
 
-void BLEManagerImpl::HandleRXCharWrite(volatile sl_bt_msg_t * evt)
+void BLEManagerImpl::HandleRXCharWrite(rsi_ble_event_write_t * evt)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
     System::PacketBufferHandle buf;
-    uint16_t writeLen = evt->data.evt_gatt_server_user_write_request.value.len;
-    uint8_t * data    = (uint8_t *) evt->data.evt_gatt_server_user_write_request.value.data;
+    uint16_t writeLen = evt->length;
+    uint8_t * data    = (uint8_t *) evt->att_value;
 
     // Copy the data to a packet buffer.
     buf = System::PacketBufferHandle::NewWithData(data, writeLen, 0, 0);
     VerifyOrExit(!buf.IsNull(), err = CHIP_ERROR_NO_MEMORY);
 
-    ChipLogDetail(DeviceLayer, "Write request/command received for CHIPoBLE RX characteristic (con %u, len %u)",
-                  evt->data.evt_gatt_server_user_write_request.connection, buf->DataLength());
+    ChipLogDetail(DeviceLayer, "Write request/command received for CHIPoBLE RX characteristic ( len %d)", writeLen);
 
     // Post an event to the CHIP queue to deliver the data into the CHIP stack.
     {
         ChipDeviceEvent event;
         event.Type                        = DeviceEventType::kCHIPoBLEWriteReceived;
-        event.CHIPoBLEWriteReceived.ConId = evt->data.evt_gatt_server_user_write_request.connection;
+        event.CHIPoBLEWriteReceived.ConId = 1;
         event.CHIPoBLEWriteReceived.Data  = std::move(buf).UnsafeRelease();
         err                               = PlatformMgr().PostEvent(&event);
     }
@@ -1149,106 +1175,5 @@ void BLEManagerImpl::DriveBLEState(intptr_t arg)
 } // namespace Internal
 } // namespace DeviceLayer
 } // namespace chip
-
-extern "C" void sl_bt_on_event(sl_bt_msg_t * evt)
-{
-    // As this is running in a separate thread, we need to block CHIP from operating,
-    // until the events are handled.
-    chip::DeviceLayer::PlatformMgr().LockChipStack();
-
-    // handle bluetooth events
-    switch (SL_BT_MSG_ID(evt->header))
-    {
-    case sl_bt_evt_system_boot_id: {
-        ChipLogProgress(DeviceLayer, "Bluetooth stack booted: v%d.%d.%d-b%d", evt->data.evt_system_boot.major,
-                        evt->data.evt_system_boot.minor, evt->data.evt_system_boot.patch, evt->data.evt_system_boot.build);
-        chip::DeviceLayer::Internal::BLEMgrImpl().HandleBootEvent();
-
-        RAIL_Version_t railVer;
-        RAIL_GetVersion(&railVer, true);
-        ChipLogProgress(DeviceLayer, "RAIL version:, v%d.%d.%d-b%d", railVer.major, railVer.minor, railVer.rev, railVer.build);
-        sl_bt_connection_set_default_parameters(BLE_CONFIG_MIN_INTERVAL, BLE_CONFIG_MAX_INTERVAL, BLE_CONFIG_LATENCY,
-                                                BLE_CONFIG_TIMEOUT, BLE_CONFIG_MIN_CE_LENGTH, BLE_CONFIG_MAX_CE_LENGTH);
-    }
-    break;
-
-    case sl_bt_evt_connection_opened_id: {
-        chip::DeviceLayer::Internal::BLEMgrImpl().HandleConnectEvent(evt);
-    }
-    break;
-    case sl_bt_evt_connection_parameters_id: {
-        // ChipLogProgress(DeviceLayer, "Connection parameter ID received");
-    }
-    break;
-    case sl_bt_evt_connection_phy_status_id: {
-        // ChipLogProgress(DeviceLayer, "PHY update procedure is completed");
-    }
-    break;
-    case sl_bt_evt_connection_closed_id: {
-        chip::DeviceLayer::Internal::BLEMgrImpl().HandleConnectionCloseEvent(evt);
-    }
-    break;
-
-    /* This event indicates that a remote GATT client is attempting to write a value of an
-     * attribute in to the local GATT database, where the attribute was defined in the GATT
-     * XML firmware configuration file to have type="user".  */
-    case sl_bt_evt_gatt_server_attribute_value_id: {
-        chip::DeviceLayer::Internal::BLEMgrImpl().HandleWriteEvent(evt);
-    }
-    break;
-
-    case sl_bt_evt_gatt_mtu_exchanged_id: {
-        chip::DeviceLayer::Internal::BLEMgrImpl().UpdateMtu(evt);
-    }
-    break;
-
-    // confirmation of indication received from remote GATT client
-    case sl_bt_evt_gatt_server_characteristic_status_id: {
-        sl_bt_gatt_server_characteristic_status_flag_t StatusFlags;
-
-        StatusFlags = (sl_bt_gatt_server_characteristic_status_flag_t) evt->data.evt_gatt_server_characteristic_status.status_flags;
-
-        if (sl_bt_gatt_server_confirmation == StatusFlags)
-        {
-            chip::DeviceLayer::Internal::BLEMgrImpl().HandleTxConfirmationEvent(
-                evt->data.evt_gatt_server_characteristic_status.connection);
-        }
-        else if ((evt->data.evt_gatt_server_characteristic_status.characteristic == gattdb_CHIPoBLEChar_Tx) &&
-                 (evt->data.evt_gatt_server_characteristic_status.status_flags == gatt_server_client_config))
-        {
-            chip::DeviceLayer::Internal::BLEMgrImpl().HandleTXCharCCCDWrite(evt);
-        }
-    }
-    break;
-
-    /* Software Timer event */
-    case sl_bt_evt_system_soft_timer_id: {
-        chip::DeviceLayer::Internal::BLEMgrImpl().HandleSoftTimerEvent(evt);
-    }
-    break;
-
-    case sl_bt_evt_gatt_server_user_read_request_id: {
-        ChipLogProgress(DeviceLayer, "GATT server user_read_request");
-#if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
-        if (evt->data.evt_gatt_server_user_read_request.characteristic == gattdb_CHIPoBLEChar_C3)
-        {
-            chip::DeviceLayer::Internal::BLEMgrImpl().HandleC3ReadRequest(evt);
-        }
-#endif // CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
-    }
-    break;
-
-    case sl_bt_evt_connection_remote_used_features_id: {
-        // ChipLogProgress(DeviceLayer, "link layer features supported by the remote device");
-    }
-    break;
-
-    default:
-        ChipLogProgress(DeviceLayer, "evt_UNKNOWN id = %08" PRIx32, SL_BT_MSG_ID(evt->header));
-        break;
-    }
-
-    chip::DeviceLayer::PlatformMgr().UnlockChipStack();
-}
 
 #endif // CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
