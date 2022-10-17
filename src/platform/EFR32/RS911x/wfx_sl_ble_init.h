@@ -72,7 +72,7 @@ void rsi_ble_app_set_event(uint32_t event_num);
 int32_t rsi_ble_app_get_event(void);
 void rsi_ble_app_clear_event(uint32_t event_num);
 void rsi_ble_app_init_events();
-void rsi_ble_task(void * arg);
+void rsi_ble_task(void);
 //#ifdef __cplusplus
 //extern "C" {
 //#endif

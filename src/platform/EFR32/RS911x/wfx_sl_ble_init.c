@@ -44,10 +44,8 @@ static uint8_t wfx_rsi_drv_buf[WFX_RSI_BUF_SZ];
 static uint32_t ble_app_event_map;
 static uint32_t ble_app_event_mask;
 static uint16_t rsi_ble_measurement_hndl;
-static rsi_ble_event_conn_status_t conn_event_to_app;
-static rsi_ble_event_disconnect_t disconn_event_to_app;
-static rsi_ble_event_conn_status_t conn_event_to_app;
-static rsi_ble_event_disconnect_t disconn_event_to_app;
+//static rsi_ble_event_conn_status_t conn_event_to_app;
+//static rsi_ble_event_disconnect_t disconn_event_to_app;
 
 const uint8_t ShortUUID_CHIPoBLEService[] = { 0xF6, 0xFF };
 
@@ -129,10 +127,11 @@ int32_t wfx_sl_module_init(void)
     }
 
     WFX_RSI_LOG("%s: rsi_task_suspend init_task ", __func__);
-    if (xTaskCreate((TaskFunction_t) rsi_ble_task, "rsi_ble", WFX_RSI_TASK_SZ, NULL, 1, &wfx_rsi.ble_task) != pdPASS)
-    {
-        WFX_RSI_LOG("ERR: RSI ble task create");
-    }
+    rsi_ble_task();
+//    if (xTaskCreate((TaskFunction_t) rsi_ble_task, "rsi_ble", WFX_RSI_TASK_SZ, NULL, 1, &wfx_rsi.ble_task) != pdPASS)
+//    {
+//        WFX_RSI_LOG("ERR: RSI ble task create");
+//    }
 
    // rsi_task_suspend((rsi_task_handle_t *)wfx_rsi.init_task);
     rsi_task_destroy((rsi_task_handle_t *)wfx_rsi.init_task);
@@ -199,6 +198,7 @@ int32_t rsi_ble_app_get_event(void)
 
     return (-1);
 }
+
 /*==============================================*/
 /**
  * @fn         rsi_ble_app_set_event
@@ -219,58 +219,8 @@ void rsi_ble_on_connect_event(rsi_ble_event_conn_status_t * resp_conn)
    rsi_ble_app_set_event(RSI_BLE_CONN_EVENT);
 }
 
-/*==============================================*/
-/**
- * @fn         rsi_ble_on_enhance_conn_status_event
- * @brief      invoked when enhanced connection complete event is received
- * @param[out] resp_conn, connected remote device information
- * @return     none.
- * @section description
- * This callback function indicates the status of the connection
- */
-void rsi_ble_on_enhance_conn_status_event(rsi_ble_event_enhance_conn_status_t *resp_enh_conn)
-{
-  conn_event_to_app.dev_addr_type = resp_enh_conn->dev_addr_type;
-  memcpy(conn_event_to_app.dev_addr, resp_enh_conn->dev_addr, RSI_DEV_ADDR_LEN);
-  conn_event_to_app.status = resp_enh_conn->status;
-  rsi_ble_app_set_event(RSI_BLE_CONN_EVENT);
-}
-
-/*==============================================*/
-/**
- * @fn         rsi_ble_on_disconnect_event
- * @brief      invoked when disconnection event is received
- * @param[in]  resp_disconnect, disconnected remote device information
- * @param[in]  reason, reason for disconnection.
- * @return     none.
- * @section description
- * This callback function indicates disconnected device information and status
- */
-void rsi_ble_on_disconnect_event(rsi_ble_event_disconnect_t *resp_disconnect, uint16_t reason)
-{
-  UNUSED_PARAMETER(reason); //This statement is added only to resolve compilation warning, value is unchanged
-  memcpy(&disconn_event_to_app, resp_disconnect, sizeof(rsi_ble_event_disconnect_t));
-  rsi_ble_app_set_event(RSI_BLE_DISCONN_EVENT);
-}
 
 
-
-/*==============================================*/
-/**
- * @fn         rsi_ble_on_event_indication_confirmation
- * @brief      this function will invoke when received indication confirmation event
- * @param[out] resp_id, response id
- * @param[out] status, status of the response
- * @return     none
- * @section description
- */
-void rsi_ble_on_event_indication_confirmation(uint16_t resp_status, rsi_ble_set_att_resp_t * rsi_ble_event_set_att_rsp)
-{
-UNUSED_PARAMETER(resp_status);
-   // if(rsi_ble_event_set_att_rsp->dev_addr[RSI_DEV_ADDR_LEN]==)
-    //! set conn specific event
-    rsi_ble_app_set_event(RSI_BLE_GATT_INDICATION_CONFIRMATION);
-}
 
 /*==============================================*/
 /**
