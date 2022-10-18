@@ -1045,10 +1045,13 @@ extern "C" void sl_bt_on_event(sl_bt_msg_t * evt)
     case sl_bt_evt_gatt_server_characteristic_status_id: {
         sl_bt_gatt_server_characteristic_status_flag_t StatusFlags;
 
+
+
         StatusFlags = (sl_bt_gatt_server_characteristic_status_flag_t) evt->data.evt_gatt_server_characteristic_status.status_flags;
 
         if (sl_bt_gatt_server_confirmation == StatusFlags)
         {
+
             chip::DeviceLayer::Internal::BLEMgrImpl().HandleTxConfirmationEvent(
                 evt->data.evt_gatt_server_characteristic_status.connection);
         }

@@ -73,7 +73,7 @@ extern "C" {
 static rsi_ble_event_conn_status_t conn_event_to_app;
 static rsi_ble_event_disconnect_t disconn_event_to_app;
 
-static int32_t handleTxConfirmationFlag = 0;
+//static int32_t handleTxConfirmationFlag = 0;
 
 using namespace ::chip;
 using namespace ::chip::Ble;
@@ -109,12 +109,7 @@ void rsi_ble_on_gatt_write_event(uint16_t event_id, rsi_ble_event_write_t *rsi_b
 {
   WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_gatt_write_event");
   UNUSED_PARAMETER(event_id); //This statement is added only to resolve compilation warning, value is unchanged
-  if(handleTxConfirmationFlag == 0) {
-    chip::DeviceLayer::Internal::BLEMgrImpl().HandleTxConfirmationEvent(1);
-                handleTxConfirmationFlag = 1;
-  } else {
-    chip::DeviceLayer::Internal::BLEMgrImpl().HandleWriteEvent(rsi_ble_write);
-  }
+  chip::DeviceLayer::Internal::BLEMgrImpl().HandleWriteEvent(rsi_ble_write);
   rsi_ble_app_set_event(RSI_BLE_GATT_WRITE_EVENT);
   return;
 }
@@ -172,6 +167,7 @@ void rsi_ble_on_event_indication_confirmation(uint16_t resp_status, rsi_ble_set_
     UNUSED_PARAMETER(resp_status);
    // if(rsi_ble_event_set_att_rsp->dev_addr[RSI_DEV_ADDR_LEN]==)
     //! set conn specific event
+    chip::DeviceLayer::Internal::BLEMgrImpl().HandleTxConfirmationEvent(1);
     rsi_ble_app_set_event(RSI_BLE_GATT_INDICATION_CONFIRMATION);
 }
 
