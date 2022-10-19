@@ -214,12 +214,6 @@ void rsi_ble_app_set_event(uint32_t event_num)
   return;
 }
 
-void rsi_ble_on_connect_event(rsi_ble_event_conn_status_t * resp_conn)
-{
-   rsi_ble_app_set_event(RSI_BLE_CONN_EVENT);
-}
-
-
 
 
 /*==============================================*/

@@ -204,6 +204,13 @@
 #define RSI_SEL_INTERNAL_ANTENNA 0x00
 #define RSI_SEL_EXTERNAL_ANTENNA 0x01
 
+#define RSI_BT_CTRL_REMOTE_USER_TERMINATED 0x4E13
+#define RSI_BT_CTRL_REMOTE_DEVICE_TERMINATED_CONNECTION_DUE_TO_LOW_RESOURCES 0x4E14
+#define RSI_BT_CTRL_REMOTE_POWERING_OFF 0x4E15
+#define RSI_BT_CTRL_TERMINATED_MIC_FAILURE 0x4E3D
+#define RSI_BT_FAILED_TO_ESTABLISH_CONN 0x4E3E
+#define RSI_BT_INVALID_RANGE 0x4E60
+
 /***********************************************************************************************************************************************/
 //! RS9116 Firmware Configurations
 /***********************************************************************************************************************************************/

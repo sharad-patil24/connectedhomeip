@@ -34,12 +34,11 @@ static_library("EFR32") {
   sources = [
     "../FreeRTOS/SystemTimeSupport.cpp",
     "../SingletonConfigurationManager.cpp",
-#    "BLEManagerImpl.cpp",
     "RS911x/BLEManagerImpl.cpp",
     "RS911x/wfx_sl_ble_init.h",
     "RS911x/wfx_sl_ble_init.c",
     "RS911x/rsi_ble_config.h",
-    "BLEManagerImpl.h",
+    "RS911x/BLEManagerImpl.h",
     "BlePlatformConfig.h",
     "CHIPDevicePlatformConfig.h",
     "CHIPDevicePlatformEvent.h",

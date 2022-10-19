@@ -27,8 +27,8 @@
 
 #include "FreeRTOS.h"
 #include "gatt_db.h"
-#include "sl_bgapi.h"
-#include "sl_bt_api.h"
+//#include "sl_bgapi.h"
+//#include "sl_bt_api.h"
 #include "timers.h"
 
 extern "C" {
@@ -40,7 +40,6 @@ extern "C" {
 //#include "wfx_sl_ble_init.h"
 
 }
-
 
 namespace chip {
 namespace DeviceLayer {
@@ -57,15 +56,15 @@ class BLEManagerImpl final : public BLEManager, private BleLayer, private BlePla
 public:
     void HandleBootEvent(void);
     void HandleConnectEvent(void);//volatile sl_bt_msg_t * evt);
-    void HandleConnectionCloseEvent(volatile sl_bt_msg_t * evt);
+    void HandleConnectionCloseEvent(uint16_t reason);
     void HandleWriteEvent(rsi_ble_event_write_t * evt);
     void UpdateMtu(rsi_ble_event_mtu_t * evt);
     void HandleTxConfirmationEvent(BLE_CONNECTION_OBJECT conId);
-    void HandleTXCharCCCDWrite(volatile sl_bt_msg_t * evt);
-    void HandleSoftTimerEvent(volatile sl_bt_msg_t * evt);
+    void HandleTXCharCCCDWrite(void);
+    void HandleSoftTimerEvent(void);
 
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
-    static void HandleC3ReadRequest(volatile sl_bt_msg_t * evt);
+    static void HandleC3ReadRequest(void);
 #endif
 
 private:

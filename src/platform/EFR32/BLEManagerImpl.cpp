@@ -1017,7 +1017,7 @@ extern "C" void sl_bt_on_event(sl_bt_msg_t * evt)
     break;
     case sl_bt_evt_connection_parameters_id: {
         // ChipLogProgress(DeviceLayer, "Connection parameter ID received");
-    }
+
     break;
     case sl_bt_evt_connection_phy_status_id: {
         // ChipLogProgress(DeviceLayer, "PHY update procedure is completed");
