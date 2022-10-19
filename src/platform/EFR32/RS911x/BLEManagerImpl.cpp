@@ -77,11 +77,6 @@ void rsi_ble_on_mtu_event(rsi_ble_event_mtu_t * rsi_ble_mtu)
    chip::DeviceLayer::Internal::BLEMgrImpl().UpdateMtu(rsi_ble_mtu);
 }
 
-void rsi_ble_on_connect_event(rsi_ble_event_conn_status_t * resp_conn)
-{
-   //rsi_ble_app_set_event(RSI_BLE_CONN_EVENT);
-}
-
 /*==============================================*/
 /**
  * @fn         rsi_ble_on_gatt_write_event
@@ -167,15 +162,14 @@ void rsi_ble_task(void)
 
     WFX_RSI_LOG("registering the GAP callback functions");
     // registering the GAP callback functions
-    rsi_ble_gap_register_callbacks(NULL, rsi_ble_on_connect_event, rsi_ble_on_disconnect_event, NULL, NULL, NULL,
+    rsi_ble_gap_register_callbacks(NULL, NULL, rsi_ble_on_disconnect_event, NULL, NULL, NULL,
                                    rsi_ble_on_enhance_conn_status_event, NULL, NULL, NULL);
 
 
     WFX_RSI_LOG("registering the GATT call back functions");
     // registering the GATT call back functions
-    rsi_ble_gatt_register_callbacks(NULL, NULL, /*rsi_ble_profile*/
-                                    NULL,       /*rsi_ble_char_services*/
-                                    NULL, NULL, NULL, NULL, rsi_ble_on_gatt_write_event, NULL, NULL, NULL, rsi_ble_on_mtu_event,
+    rsi_ble_gatt_register_callbacks(NULL, NULL,NULL, NULL, NULL, NULL, NULL,
+                                    rsi_ble_on_gatt_write_event, NULL, NULL, NULL, rsi_ble_on_mtu_event,
                                     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, rsi_ble_on_event_indication_confirmation,
                                     NULL);
 
@@ -229,6 +223,8 @@ namespace {
 #define BLE_CONFIG_MIN_CE_LENGTH (0) // Leave to min value
 #define BLE_CONFIG_MAX_CE_LENGTH (0xFFFF) // Leave to max value
 
+#define BLE__DEFAULT_TIMER_PERIOD 1
+
 TimerHandle_t sbleAdvTimeoutTimer; // FreeRTOS sw timer.
 
 const uint8_t UUID_CHIPoBLEService[]       = { 0xFB, 0x34, 0x9B, 0x5F, 0x80, 0x00, 0x00, 0x80,
@@ -263,28 +259,21 @@ CHIP_ERROR BLEManagerImpl::_Init()
     memset(mIndConfId, kUnusedIndex, sizeof(mIndConfId));
     mServiceMode = ConnectivityManager::kCHIPoBLEServiceMode_Enabled;
 
-    //    if (xTaskCreate((TaskFunction_t) rsi_ble_task, "rsi_ble", WFX_RSI_TASK_SZ, NULL, 1, &wfx_rsi.ble_task) != pdPASS)
-    //    {
-    //        WFX_RSI_LOG("ERR: RSI ble task create");
-    //    }
-
     ChipLogProgress(DeviceLayer, "%s Create FreeRTOS sw timer for BLE timeouts and interval change. ", __func__);
     // Create FreeRTOS sw timer for BLE timeouts and interval change.
     sbleAdvTimeoutTimer = xTimerCreate("BleAdvTimer",       // Just a text name, not used by the RTOS kernel
-                                       1,                   // == default timer period (mS)
+                                       BLE__DEFAULT_TIMER_PERIOD,                   // == default timer period (mS)
                                        false,               // no timer reload (==one-shot)
                                        (void *) this,       // init timer id = ble obj context
                                        BleAdvTimeoutHandler // timer callback handler
     );
 
-    ChipLogProgress(DeviceLayer, "%s DriveBLEState ", __func__);
+    mFlags.ClearAll().Set(Flags::kAdvertisingEnabled, CHIP_DEVICE_CONFIG_CHIPOBLE_ENABLE_ADVERTISING_AUTOSTART);
+    mFlags.Set(Flags::kFastAdvertisingEnabled, true);
     PlatformMgr().ScheduleWork(DriveBLEState, 0);
 
-    //    rsi_ble_add_simple_chat_serv3();
-    //    rsi_ble_register_callback()
-    //
-    //    //  initializing the application events map
-    //    rsi_ble_app_init_events();
+    ChipLogProgress(DeviceLayer, "%s DriveBLEState ", __func__);
+    PlatformMgr().ScheduleWork(DriveBLEState, 0);
 
 exit:
     ChipLogProgress(DeviceLayer, "%s END ", __func__);
