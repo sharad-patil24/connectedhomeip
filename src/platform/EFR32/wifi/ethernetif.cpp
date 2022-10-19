@@ -50,7 +50,6 @@ void efr32Log(const char * aFormat, ...);
 #define EFR32_LOG(...) efr32Log(__VA_ARGS__);
 }
 #endif
-
 StaticSemaphore_t xEthernetIfSemaBuffer;
 
 /*****************************************************************************
@@ -113,6 +112,22 @@ static void low_level_input(struct netif * netif, uint8_t * b, uint16_t len)
     struct pbuf *p, *q;
     uint32_t bufferoffset;
 
+
+ #ifdef WF200_WIFI
+ static uint8_t counter1=0;
+ static uint8_t discard_counter1=0;
+  counter1++;
+  if(counter1 == 5)
+  {
+    overrun_count++;
+    discard_counter1++;
+    EFR32_LOG ("overrun count entering value %d",overrun_count);
+    EFR32_LOG ("discard counter entering value %d",discard_counter1);
+    counter1 =0;
+    return;
+  }
+  #endif
+
     if (len <= 0)
     {
         return;
@@ -139,8 +154,15 @@ static void low_level_input(struct netif * netif, uint8_t * b, uint16_t len)
 
         if (netif->input(p, netif) != ERR_OK)
         {
+            overrun_count++;
+            EFR32_LOG("overrun count entering when fail to alloc value %d",overrun_count);
             pbuf_free(p);
         }
+    }
+    else
+    {
+            overrun_count++;
+            EFR32_LOG("overrun count entering when fail to alloc value %d",overrun_count);
     }
 }
 
@@ -168,6 +190,20 @@ static err_t low_level_output(struct netif * netif, struct pbuf * p)
     uint32_t bufferoffset;
     uint32_t padding;
     sl_status_t result;
+     static uint8_t counter2=0;
+      static uint8_t  discard_counter2=0;
+
+
+    counter2++;
+  if(counter2 == 5)
+  {
+    overrun_count++;
+    discard_counter2++;
+    EFR32_LOG ("overrun count exiting value %d",overrun_count);
+EFR32_LOG ("discard counter exiting value %d",discard_counter2);
+    counter2 =0;
+    return ERR_MEM;
+  }
 
     for (q = p, framelength = 0; q != NULL; q = q->next)
     {
@@ -188,6 +224,8 @@ static err_t low_level_output(struct netif * netif, struct pbuf * p)
     if (sl_wfx_host_allocate_buffer((void **) &tx_buffer, SL_WFX_TX_FRAME_BUFFER, asize) != SL_STATUS_OK)
     {
         EFR32_LOG("*ERR*EN-Out: No mem frame len=%d", framelength);
+         overrun_count++;
+        EFR32_LOG ("overrun count exiting when faied to alloc value %d",overrun_count);
         return ERR_MEM;
     }
     buffer = tx_buffer->body.packet_data;
