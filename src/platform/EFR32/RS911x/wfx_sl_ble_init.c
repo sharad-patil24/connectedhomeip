@@ -33,13 +33,13 @@
 #include "rsi_ble_config.h"
 //#include "BLEManagerImpl.h"
 // application defines
-
+rsi_ble_event_conn_status_t conn_event_to_app;
 rsi_ble_t att_list;
 // Memory to initialize driver
 uint8_t bt_global_buf[BT_GLOBAL_BUFF_LEN];
 
 sl_wfx_msg_t event_msg;
-
+uint16_t rsi_ble_measurement_hndl;
 
 static uint8_t wfx_rsi_drv_buf[WFX_RSI_BUF_SZ];
 
@@ -78,7 +78,7 @@ int32_t wfx_sl_module_init(void)
      * Create the driver task
      */
     wfx_rsi.drv_task = xTaskCreateStatic((TaskFunction_t) rsi_wireless_driver_task, "rsi_drv", WFX_RSI_WLAN_TASK_SZ, NULL,
-                                         53, driverRsiTaskStack, &driverRsiTaskBuffer);
+                                         1, driverRsiTaskStack, &driverRsiTaskBuffer);
     if (NULL == wfx_rsi.drv_task)
     {
         WFX_RSI_LOG("%s: error: rsi_wireless_driver_task failed", __func__);
@@ -123,13 +123,11 @@ int32_t wfx_sl_module_init(void)
     }
 
     WFX_RSI_LOG("%s: rsi_task_suspend init_task ", __func__);
-    rsi_ble_task();
-//    if (xTaskCreate((TaskFunction_t) rsi_ble_task, "rsi_ble", WFX_RSI_TASK_SZ, NULL, 1, &wfx_rsi.ble_task) != pdPASS)
-//    {
-//        WFX_RSI_LOG("ERR: RSI ble task create");
-//    }
+    if (xTaskCreate((TaskFunction_t) rsi_ble_task, "rsi_ble", WFX_RSI_TASK_SZ, NULL, 1, &wfx_rsi.ble_task) != pdPASS)
+    {
+        WFX_RSI_LOG("ERR: RSI ble task create");
+    }
 
-   // rsi_task_suspend((rsi_task_handle_t *)wfx_rsi.init_task);
     rsi_task_destroy((rsi_task_handle_t *)wfx_rsi.init_task);
     WFX_RSI_LOG("%s: wfx_sl_module_init complete", __func__);
     return RSI_SUCCESS;
@@ -219,6 +217,7 @@ void rsi_ble_on_enhance_conn_status_event(rsi_ble_event_enhance_conn_status_t *r
   event_msg.connectionHandle = 1;
   event_msg.bondingHandle = 255;
   event_msg.resp_enh_conn = resp_enh_conn;
+  memcpy(conn_event_to_app.dev_addr, resp_enh_conn->dev_addr, RSI_DEV_ADDR_LEN);
   rsi_ble_app_set_event(RSI_BLE_CONN_EVENT);
 }
 
@@ -258,11 +257,6 @@ void rsi_ble_on_event_indication_confirmation(uint16_t resp_status, rsi_ble_set_
     event_msg.rsi_ble_event_set_att_rsp = rsi_ble_event_set_att_rsp;
     rsi_ble_app_set_event(RSI_BLE_GATT_INDICATION_CONFIRMATION);
 }
-
-
-
-
-
 /*==============================================*/
 /**
  * @fn         rsi_ble_app_get_event
@@ -479,7 +473,8 @@ uint32_t rsi_ble_add_matter_service(void)
     // adding characteristic value attribute to the service
     //  rsi_ble_att2_val_hndl = new_serv_resp.start_handle + 2;
 
-    event_msg.rsi_ble_measurement_hndl = new_serv_resp.start_handle + 2;
+//    event_msg.rsi_ble_measurement_hndl = new_serv_resp.start_handle + 2;
+    rsi_ble_measurement_hndl = new_serv_resp.start_handle + 2;
     rsi_ble_add_char_val_att(new_serv_resp.serv_handler, new_serv_resp.start_handle + 2, custom_characteristic_RX,
                              RSI_BLE_ATT_PROPERTY_WRITE | RSI_BLE_ATT_PROPERTY_READ, // Set read, write, write without response
                              data1, sizeof(data1), 0);
