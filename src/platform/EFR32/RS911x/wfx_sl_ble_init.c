@@ -39,14 +39,9 @@ rsi_ble_t att_list;
 uint8_t bt_global_buf[BT_GLOBAL_BUFF_LEN];
 
 sl_wfx_msg_t event_msg;
-extern uint8_t ble_connected;
+
 
 static uint8_t wfx_rsi_drv_buf[WFX_RSI_BUF_SZ];
-static uint32_t ble_app_event_map;
-static uint32_t ble_app_event_mask;
-static uint16_t rsi_ble_measurement_hndl;
-//static rsi_ble_event_conn_status_t conn_event_to_app;
-//static rsi_ble_event_disconnect_t disconn_event_to_app;
 
 const uint8_t ShortUUID_CHIPoBLEService[] = { 0xF6, 0xFF };
 
@@ -152,9 +147,9 @@ int32_t wfx_sl_module_init(void)
  */
 void rsi_ble_app_init_events()
 {
-    ble_app_event_map  = 0;
-    ble_app_event_mask = 0xFFFFFFFF;
-    ble_app_event_mask = ble_app_event_mask; // To suppress warning while compiling
+    event_msg.ble_app_event_map  = 0;
+    event_msg.ble_app_event_mask = 0xFFFFFFFF;
+    event_msg.ble_app_event_mask = event_msg.ble_app_event_mask; // To suppress warning while compiling
     WFX_RSI_LOG("Function :: rsi_ble_app_init_events");
     return;
 }
@@ -171,7 +166,7 @@ void rsi_ble_app_init_events()
 void rsi_ble_app_clear_event(uint32_t event_num)
 {
     event_msg.event_num = event_num;
-    ble_app_event_map &= ~BIT(event_num);
+    event_msg.ble_app_event_map &= ~BIT(event_num);
     return;
 }
 
@@ -221,6 +216,8 @@ void rsi_ble_on_gatt_write_event(uint16_t event_id, rsi_ble_event_write_t *rsi_b
 void rsi_ble_on_enhance_conn_status_event(rsi_ble_event_enhance_conn_status_t *resp_enh_conn)
 {
   WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_enhance_conn_status_event");
+  event_msg.connectionHandle = 1;
+  event_msg.bondingHandle = 255;
   event_msg.resp_enh_conn = resp_enh_conn;
   rsi_ble_app_set_event(RSI_BLE_CONN_EVENT);
 }
@@ -283,7 +280,7 @@ int32_t rsi_ble_app_get_event(void)
 
     for (ix = 0; ix < 32; ix++)
     {
-        if (ble_app_event_map & (1 << ix))
+        if (event_msg.ble_app_event_map & (1 << ix))
         {
             return ix;
         }
@@ -303,7 +300,7 @@ int32_t rsi_ble_app_get_event(void)
  */
 void rsi_ble_app_set_event(uint32_t event_num)
 {
-  ble_app_event_map |= BIT(event_num);
+  event_msg.ble_app_event_map |= BIT(event_num);
   return;
 }
 
@@ -482,7 +479,7 @@ uint32_t rsi_ble_add_matter_service(void)
     // adding characteristic value attribute to the service
     //  rsi_ble_att2_val_hndl = new_serv_resp.start_handle + 2;
 
-    rsi_ble_measurement_hndl = new_serv_resp.start_handle + 2;
+    event_msg.rsi_ble_measurement_hndl = new_serv_resp.start_handle + 2;
     rsi_ble_add_char_val_att(new_serv_resp.serv_handler, new_serv_resp.start_handle + 2, custom_characteristic_RX,
                              RSI_BLE_ATT_PROPERTY_WRITE | RSI_BLE_ATT_PROPERTY_READ, // Set read, write, write without response
                              data1, sizeof(data1), 0);
@@ -502,7 +499,7 @@ uint32_t rsi_ble_add_matter_service(void)
                               new_serv_resp.start_handle + 4, custom_characteristic_TX);
 
     // adding characteristic value attribute to the service
-    rsi_ble_measurement_hndl = new_serv_resp.start_handle + 4;
+    event_msg.rsi_ble_measurement_hndl = new_serv_resp.start_handle + 4;
    
     rsi_ble_add_char_val_att(new_serv_resp.serv_handler, new_serv_resp.start_handle + 4, custom_characteristic_TX,
                              RSI_BLE_ATT_PROPERTY_WRITE_NO_RESPONSE | RSI_BLE_ATT_PROPERTY_WRITE | RSI_BLE_ATT_PROPERTY_READ |

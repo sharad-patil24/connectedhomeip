@@ -422,27 +422,12 @@ uint16_t BLEManagerImpl::GetMTU(BLE_CONNECTION_OBJECT conId) const
 bool BLEManagerImpl::SendIndication(BLE_CONNECTION_OBJECT conId, const ChipBleUUID * svcId, const ChipBleUUID * charId,
                                     PacketBufferHandle data)
 {
-    CHIP_ERROR err              = CHIP_NO_ERROR;
-    CHIPoBLEConState * conState = GetConnectionState(conId);
-    int32_t ret;
-    //uint16_t cId        = (UUIDsMatch(&ChipUUID_CHIPoBLEChar_RX, charId) ? gattdb_CHIPoBLEChar_Rx : gattdb_CHIPoBLEChar_Tx);
-    uint8_t timerHandle = GetTimerHandle(conId, true);
-
-    VerifyOrExit(((conState != NULL) && (conState->subscribed != 0)), err = CHIP_ERROR_INVALID_ARGUMENT);
-    VerifyOrExit(timerHandle != kMaxConnections, err = CHIP_ERROR_NO_MEMORY);
-
-    // start timer for light indication confirmation. Long delay for spake2 indication
-//    sl_bt_system_set_lazy_soft_timer(TIMER_S_2_TIMERTICK(6), 0, timerHandle, true);
-//
-//    ret = sl_bt_gatt_server_send_indication(conId, cId, (data->DataLength()), data->Start());
-    err = MapBLEError(ret);
-
-exit:
-    if (err != CHIP_NO_ERROR)
-    {
-        ChipLogError(DeviceLayer, "BLEManagerImpl::SendIndication() failed: %s", ErrorStr(err));
-        return false;
-    }
+    int32_t status = 0;
+     WFX_RSI_LOG("In send indication");
+     status        = rsi_ble_indicate_value(event_msg.resp_enh_conn->dev_addr,event_msg.rsi_ble_measurement_hndl,(data->DataLength()),data->Start());
+     if (status != RSI_SUCCESS) {
+        WFX_RSI_LOG("indication %d failed with error code %lx ",  status);
+     }
 
     return true;
 }
@@ -785,7 +770,7 @@ void BLEManagerImpl::HandleConnectEvent(void)//volatile sl_bt_msg_t * evt)
 //
     ChipLogProgress(DeviceLayer, "Connect Event for handle : 1");
 //
-    AddConnection(1, 255);
+    AddConnection(event_msg.connectionHandle, event_msg.bondingHandle);
 
     PlatformMgr().ScheduleWork(DriveBLEState, 0);
 }
