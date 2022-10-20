@@ -82,7 +82,7 @@
 #define RSI_BLE_MAX_NBR_ATT_SERV 10
 
 #define RSI_BLE_MAX_NBR_MASTERS 1
-#define RSI_BLE_GATT_ASYNC_ENABLE 0
+#define RSI_BLE_GATT_ASYNC_ENABLE 1
 #define RSI_BLE_GATT_INIT 0
 
 /* Number of BLE GATT RECORD SIZE IN (n*16 BYTES), eg:(0x40*16)=1024 bytes */
@@ -210,6 +210,7 @@
 #define SL_WFX_BT_CTRL_TERMINATED_MIC_FAILURE 0x4E3D
 #define SL_WFX_BT_FAILED_TO_ESTABLISH_CONN 0x4E3E
 #define SL_WFX_BT_INVALID_RANGE 0x4E60
+
 
 /***********************************************************************************************************************************************/
 //! RS9116 Firmware Configurations
