@@ -38,6 +38,7 @@ rsi_ble_t att_list;
 // Memory to initialize driver
 uint8_t bt_global_buf[BT_GLOBAL_BUFF_LEN];
 
+sl_wfx_msg_t event_msg;
 extern uint8_t ble_connected;
 
 static uint8_t wfx_rsi_drv_buf[WFX_RSI_BUF_SZ];
@@ -169,9 +170,101 @@ void rsi_ble_app_init_events()
  */
 void rsi_ble_app_clear_event(uint32_t event_num)
 {
+    event_msg.event_num = event_num;
     ble_app_event_map &= ~BIT(event_num);
     return;
 }
+
+/*==============================================*/
+/**
+ * @fn         rsi_ble_on_mtu_event
+ * @brief      its invoked when mtu exhange event is received.
+ * @param[in]  rsi_ble_mtu, mtu event paramaters.
+ * @return     none.
+ * @section description
+ * This callback function is invoked when  mtu exhange event is received
+ */
+void rsi_ble_on_mtu_event(rsi_ble_event_mtu_t * rsi_ble_mtu)
+{
+  WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_mtu_event");
+  event_msg.rsi_ble_mtu = rsi_ble_mtu;
+  rsi_ble_app_set_event(RSI_BLE_MTU_EVENT);
+}
+
+/*==============================================*/
+/**
+ * @fn         rsi_ble_on_gatt_write_event
+ * @brief      its invoked when write/notify/indication events are received.
+ * @param[in]  event_id, it indicates write/notification event id.
+ * @param[in]  rsi_ble_write, write event parameters.
+ * @return     none.
+ * @section description
+ * This callback function is invoked when write/notify/indication events are received
+ */
+void rsi_ble_on_gatt_write_event(uint16_t event_id, rsi_ble_event_write_t *rsi_ble_write)
+{
+  WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_gatt_write_event");
+  event_msg.event_id = event_id;
+  event_msg.rsi_ble_write = rsi_ble_write;
+  rsi_ble_app_set_event(RSI_BLE_GATT_WRITE_EVENT);
+}
+
+/*==============================================*/
+/**
+ * @fn         rsi_ble_on_enhance_conn_status_event
+ * @brief      invoked when enhanced connection complete event is received
+ * @param[out] resp_conn, connected remote device information
+ * @return     none.
+ * @section description
+ * This callback function indicates the status of the connection
+ */
+void rsi_ble_on_enhance_conn_status_event(rsi_ble_event_enhance_conn_status_t *resp_enh_conn)
+{
+  WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_enhance_conn_status_event");
+  event_msg.resp_enh_conn = resp_enh_conn;
+  rsi_ble_app_set_event(RSI_BLE_CONN_EVENT);
+}
+
+
+/*==============================================*/
+/**
+ * @fn         rsi_ble_on_disconnect_event
+ * @brief      invoked when disconnection event is received
+ * @param[in]  resp_disconnect, disconnected remote device information
+ * @param[in]  reason, reason for disconnection.
+ * @return     none.
+ * @section description
+ * This callback function indicates disconnected device information and status
+ */
+void rsi_ble_on_disconnect_event(rsi_ble_event_disconnect_t *resp_disconnect, uint16_t reason)
+{
+  WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_disconnect_event");
+  event_msg.resp_disconnect = resp_disconnect;
+  event_msg.reason = reason;
+  rsi_ble_app_set_event(RSI_BLE_DISCONN_EVENT);
+}
+
+
+/*==============================================*/
+/**
+ * @fn         rsi_ble_on_event_indication_confirmation
+ * @brief      this function will invoke when received indication confirmation event
+ * @param[out] resp_id, response id
+ * @param[out] status, status of the response
+ * @return     none
+ * @section description
+ */
+void rsi_ble_on_event_indication_confirmation(uint16_t resp_status, rsi_ble_set_att_resp_t * rsi_ble_event_set_att_rsp)
+{
+    WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_event_indication_confirmation");
+    event_msg.resp_status = resp_status;
+    event_msg.rsi_ble_event_set_att_rsp = rsi_ble_event_set_att_rsp;
+    rsi_ble_app_set_event(RSI_BLE_GATT_INDICATION_CONFIRMATION);
+}
+
+
+
+
 
 /*==============================================*/
 /**
@@ -364,27 +457,13 @@ void rsi_ble_add_char_val_att(void * serv_handler, uint16_t handle, uuid_t att_t
     return;
 }
 
-uint32_t rsi_ble_add_simple_chat_serv3(void)
+uint32_t rsi_ble_add_matter_service(void)
 {
-    // volatile uint16_t rsi_ble_att2_val_hndl;
-    // adding the custom service
-    // 0x6A4E3300-667B-11E3-949A-0800200C9A66
-
-    /*static const uuid_t custom_service = { .size             = 16,
-                                           .reserved         = { 0x00, 0x00, 0x00 },
-                                           .val.val128.data1 = 0x6A4E3300,
-                                           .val.val128.data2 = 0x667B,
-                                           .val.val128.data3 = 0x11E3,
-                                           .val.val128.data4 = { 0x9A, 0x94, 0x00, 0x08, 0x66, 0x9A, 0x0C, 0x20 } };*/
-
-    /*static const uuid_t custom_service = { .size             = 2,
-                                           .val16            = 0xFFF6};*/
     uuid_t custom_service    = { 0 };
     custom_service.size      = 2;
     custom_service.val.val16 = 0xFFF6;
     uint8_t data1[230]       = { 0x00 };
-    // 6A4E3304-667B-11E3-949A-0800200C9A66
-    // 18EE2EF5-263D-4559-959F-4F9C429F9D11
+
     static const uuid_t custom_characteristic_RX = { .size             = 16,
                                                      .reserved         = { 0x00, 0x00, 0x00 },
                                                      .val.val128.data1 = 0x18EE2EF5,

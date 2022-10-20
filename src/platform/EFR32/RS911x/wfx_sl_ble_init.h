@@ -54,6 +54,19 @@
 #include "rsi_board.h"
 #endif
 
+typedef struct sl_wfx_msg_s
+{
+    uint32_t event_num;
+    uint16_t reason;
+    uint16_t event_id;
+    uint16_t resp_status;
+    rsi_ble_event_mtu_t *rsi_ble_mtu;
+    rsi_ble_event_write_t *rsi_ble_write;
+    rsi_ble_event_enhance_conn_status_t *resp_enh_conn;
+    rsi_ble_event_disconnect_t *resp_disconnect;
+    rsi_ble_set_att_resp_t * rsi_ble_event_set_att_rsp;
+} sl_wfx_msg_t;
+
 int32_t wfx_sl_module_init(void);
 void rsi_ble_on_connect_event(rsi_ble_event_conn_status_t * resp_conn);
 void rsi_ble_on_disconnect_event(rsi_ble_event_disconnect_t *resp_disconnect, uint16_t reason);
@@ -67,12 +80,13 @@ void rsi_ble_add_char_serv_att(void * serv_handler, uint16_t handle, uint8_t val
                                       uuid_t att_val_uuid);
 void rsi_ble_add_char_val_att(void * serv_handler, uint16_t handle, uuid_t att_type_uuid, uint8_t val_prop, uint8_t * data,
                                      uint8_t data_len, uint8_t auth_read);
-uint32_t rsi_ble_add_simple_chat_serv3(void);
+uint32_t rsi_ble_add_matter_service(void);
 void rsi_ble_app_set_event(uint32_t event_num);
 int32_t rsi_ble_app_get_event(void);
 void rsi_ble_app_clear_event(uint32_t event_num);
 void rsi_ble_app_init_events();
 void rsi_ble_task(void);
+
 //#ifdef __cplusplus
 //extern "C" {
 //#endif
