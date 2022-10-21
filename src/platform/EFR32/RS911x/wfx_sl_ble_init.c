@@ -48,6 +48,11 @@ StackType_t driverRsiTaskStack[WFX_RSI_WLAN_TASK_SZ] = { 0 };
 /* Structure that will hold the TCB of the wfxRsi Task being created. */
 StaticTask_t driverRsiTaskBuffer;
 
+StaticTask_t rsiBLETaskStruct;
+
+/* wfxRsi Task will use as its stack */
+StackType_t wfxBLETaskStack[WFX_RSI_TASK_SZ] = { 0 };
+
 int32_t wfx_sl_module_init(void)
 {
     int32_t status;
@@ -140,10 +145,11 @@ int32_t wfx_sl_module_init(void)
     //  initializing the application events map
     rsi_ble_app_init_events();
 
+    wfx_rsi.ble_task = xTaskCreateStatic((TaskFunction_t) rsi_ble_event_handling_task, "rsi_ble", WFX_RSI_TASK_SZ, NULL, 1, wfxBLETaskStack, &rsiBLETaskStruct);
     WFX_RSI_LOG("%s: rsi_task_suspend init_task ", __func__);
-    if (xTaskCreate((TaskFunction_t) rsi_ble_event_handling_task, "rsi_ble", WFX_RSI_TASK_SZ, NULL, 1, &wfx_rsi.ble_task) != pdPASS)
+    if (wfx_rsi.ble_task == NULL)
     {
-        WFX_RSI_LOG("ERR: RSI ble task create");
+        WFX_RSI_LOG("%s: error: failed to create ble task.", __func__);
     }
 
     WFX_RSI_LOG("%s complete", __func__);
@@ -485,7 +491,7 @@ uint32_t rsi_ble_add_matter_service(void)
 
     static const uuid_t custom_characteristic_RX = { .size             = RSI_BLE_CUSTOM_CHARACTERISTIC_RX_SIZE,
                                                      .reserved         = { RSI_BLE_CUSTOM_CHARACTERISTIC_RX_RESERVED },
-                                                     .val.val128.data1 = RSI_BLE_CUSTOM_CHARACTERISTIC_RX_VALUE_128,
+                                                     .val.val128.data1 = RSI_BLE_CUSTOM_CHARACTERISTIC_RX_VALUE_128_DATA_1,
                                                      .val.val128.data2 = RSI_BLE_CUSTOM_CHARACTERISTIC_RX_VALUE_128_DATA_2,
                                                      .val.val128.data3 = RSI_BLE_CUSTOM_CHARACTERISTIC_RX_VALUE_128_DATA_3,
                                                      .val.val128.data4 = { RSI_BLE_CUSTOM_CHARACTERISTIC_RX_VALUE_128_DATA_4 } };
@@ -507,7 +513,7 @@ uint32_t rsi_ble_add_matter_service(void)
                              RSI_BLE_ATT_PROPERTY_WRITE | RSI_BLE_ATT_PROPERTY_READ, // Set read, write, write without response
                              data,
                              sizeof(data),
-                             ATT_REC_MAINTAIN_IN_HOST);
+                             ATT_REC_IN_HOST);
 
 
 
@@ -526,10 +532,10 @@ uint32_t rsi_ble_add_matter_service(void)
                               custom_characteristic_TX);
 
     // Adding characteristic value attribute to the service
-    event_msg.rsi_ble_measurement_hndl = new_serv_resp.start_handle + RSI_BLE_MEASUREMENT_HANDLE_LOCATION;
+    event_msg.rsi_ble_measurement_hndl = new_serv_resp.start_handle + RSI_BLE_CHARACTERISTIC_TX_MEASUREMENT_HANDLE_LOCATION;
 
     // Adding characteristic value attribute to the service
-    event_msg.rsi_ble_gatt_server_client_config_hndl = new_serv_resp.start_handle + RSI_BLE_GATT_SERVER_CLIENT_HANDLE_LOCATION;
+    event_msg.rsi_ble_gatt_server_client_config_hndl = new_serv_resp.start_handle + RSI_BLE_CHARACTERISTIC_TX_GATT_SERVER_CLIENT_HANDLE_LOCATION;
 
     rsi_ble_add_char_val_att(new_serv_resp.serv_handler,
                              event_msg.rsi_ble_measurement_hndl,

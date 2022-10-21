@@ -58,8 +58,10 @@ extern uint16_t rsi_ble_measurement_hndl;
 extern rsi_ble_event_conn_status_t conn_event_to_app;
 extern sl_wfx_msg_t event_msg;
 
-StaticTask_t busTaskStruct;
-StackType_t wfxRsiTaskStack[WFX_RSI_TASK_SZ] = { 0 };
+StaticTask_t busInitTaskStruct;
+
+/* wfxRsi Task will use as its stack */
+StackType_t wfxRsiInitTaskStack[WFX_RSI_TASK_SZ] = { 0 };
 
 using namespace ::chip;
 using namespace ::chip::Ble;
@@ -195,10 +197,11 @@ CHIP_ERROR BLEManagerImpl::_Init()
     CHIP_ERROR err;
     ChipLogProgress(DeviceLayer, "%s Start ", __func__);
 
-    if (xTaskCreateStatic((TaskFunction_t) wfx_sl_module_init, "init_task", WFX_RSI_TASK_SZ, NULL, 1, &wfx_rsi.init_task, &busTaskStruct) != pdPASS)
-    {
-        WFX_RSI_LOG("ERR: RSI ble task create");
-    } /// TODO:: Add sync call for this task
+    wfx_rsi.init_task = xTaskCreateStatic((TaskFunction_t) wfx_sl_module_init, "init_task", WFX_RSI_TASK_SZ, NULL, 1, wfxRsiInitTaskStack, &busInitTaskStruct);
+
+    if (NULL == wfx_rsi.init_task) {
+        WFX_RSI_LOG("%s: error: failed to create task.", __func__);
+    }
 
     // Initialize the CHIP BleLayer.
     err = BleLayer::Init(this, this, &DeviceLayer::SystemLayer());
@@ -320,7 +323,7 @@ void BLEManagerImpl::_OnPlatformEvent(const ChipDeviceEvent * event)
         ChipDeviceEvent connEstEvent;
 
         ChipLogProgress(DeviceLayer, "_OnPlatformEvent kCHIPoBLESubscribe");
-        HandleSubscribeReceivedHandleSubscribeReceived(event->CHIPoBLESubscribe.ConId, &CHIP_BLE_SVC_ID, &ChipUUID_CHIPoBLEChar_TX);
+        HandleSubscribeReceived(event->CHIPoBLESubscribe.ConId, &CHIP_BLE_SVC_ID, &ChipUUID_CHIPoBLEChar_TX);
         connEstEvent.Type = DeviceEventType::kCHIPoBLEConnectionEstablished;
         PlatformMgr().PostEventOrDie(&connEstEvent);
     }
@@ -398,7 +401,7 @@ bool BLEManagerImpl::SendIndication(BLE_CONNECTION_OBJECT conId, const ChipBleUU
 {
     int32_t status = 0;
     WFX_RSI_LOG("In send indication");
-    status = rsi_ble_indicate_value(conn_event_to_app.dev_addr, rsi_ble_measurement_hndl, (data->DataLength()), data->Start());
+    status = rsi_ble_indicate_value(conn_event_to_app.dev_addr, event_msg.rsi_ble_measurement_hndl, (data->DataLength()), data->Start());
     if (status != RSI_SUCCESS)
     {
         WFX_RSI_LOG("indication %d failed with error code %lx ", status);
