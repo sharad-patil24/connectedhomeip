@@ -43,7 +43,7 @@ extern "C" {
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
 #include <platform/CommissionableDataProvider.h>
-#include <platform/DeviceInstanceInfoProvider.h>
+#include <platform/DeviceInstanceInfoProvider.h>![](C:/Users/shgutte/AppData/Local/Temp/download.jpg)
 #include <sl_bt_rtos_adaptation.h>
 
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING

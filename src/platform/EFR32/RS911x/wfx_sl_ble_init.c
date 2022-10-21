@@ -31,18 +31,15 @@
 
 #include "wfx_sl_ble_init.h"
 #include "rsi_ble_config.h"
-//#include "BLEManagerImpl.h"
+
 // application defines
 rsi_ble_event_conn_status_t conn_event_to_app;
 rsi_ble_t att_list;
+sl_wfx_msg_t event_msg;
+
 // Memory to initialize driver
 uint8_t bt_global_buf[BT_GLOBAL_BUFF_LEN];
-
-sl_wfx_msg_t event_msg;
-uint16_t rsi_ble_measurement_hndl;
-
 static uint8_t wfx_rsi_drv_buf[WFX_RSI_BUF_SZ];
-
 const uint8_t ShortUUID_CHIPoBLEService[] = { 0xF6, 0xFF };
 
 /* Rsi driver Task will use as its stack */
@@ -58,15 +55,17 @@ int32_t wfx_sl_module_init(void)
     extern void rsi_hal_board_init(void);
 
     WFX_RSI_LOG("%s: starting(HEAP_SZ = %d)", __func__, SL_HEAP_SIZE);
+
     //! Driver initialization
     status = rsi_driver_init(wfx_rsi_drv_buf, WFX_RSI_BUF_SZ);
     if ((status < RSI_DRIVER_STATUS) || (status > WFX_RSI_BUF_SZ))
     {
-        WFX_RSI_LOG("%s: error: RSI drv init failed with status: %02x", __func__, status);
+        WFX_RSI_LOG("%s: error: RSI Driver initialization failed with status: %02x", __func__, status);
         return status;
     }
 
     WFX_RSI_LOG("%s: rsi_device_init", __func__);
+
     /* ! Redpine module intialisation */
     if ((status = rsi_device_init(LOAD_NWP_FW)) != RSI_SUCCESS)
     {
@@ -74,6 +73,7 @@ int32_t wfx_sl_module_init(void)
         return status;
     }
     WFX_RSI_LOG("%s: start wireless drv task", __func__);
+
     /*
      * Create the driver task
      */
@@ -81,7 +81,7 @@ int32_t wfx_sl_module_init(void)
                                          1, driverRsiTaskStack, &driverRsiTaskBuffer);
     if (NULL == wfx_rsi.drv_task)
     {
-        WFX_RSI_LOG("%s: error: rsi_wireless_driver_task failed", __func__);
+        WFX_RSI_LOG("%s: error: Create the driver task failed", __func__);
         return RSI_ERROR_INVALID_PARAM;
     }
 
@@ -89,11 +89,12 @@ int32_t wfx_sl_module_init(void)
     WFX_RSI_LOG("%s: rsi_wireless_init", __func__);
     if ((status = rsi_wireless_init(OPER_MODE_0, RSI_OPERMODE_WLAN_BLE)) != RSI_SUCCESS)
     {
-        WFX_RSI_LOG("%s: error: rsi_wireless_init failed with status: %02x", __func__, status);
+        WFX_RSI_LOG("%s: error: Initialize WiSeConnect failed with status: %02x", __func__, status);
         return status;
     }
 
     WFX_RSI_LOG("%s: get FW version..", __func__);
+
     /*
      * Get the MAC and other info to let the user know about it.
      */
@@ -122,14 +123,31 @@ int32_t wfx_sl_module_init(void)
         return status;
     }
 
+    // registering the GAP callback functions
+    rsi_ble_gap_register_callbacks(NULL, NULL, rsi_ble_on_disconnect_event, NULL, NULL, NULL, rsi_ble_on_enhance_conn_status_event,
+                                   NULL, NULL, NULL);
+
+    // registering the GATT call back functions
+    rsi_ble_gatt_register_callbacks(NULL, NULL, NULL, NULL, NULL, NULL, NULL, rsi_ble_on_gatt_write_event, NULL, NULL, NULL,
+                                    rsi_ble_on_mtu_event, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                                    rsi_ble_on_event_indication_confirmation, NULL);
+
+    WFX_RSI_LOG("registering rsi_ble_add_service");
+
+    //  Exchange of GATT info with BLE stack
+    rsi_ble_add_matter_service();
+
+    //  initializing the application events map
+    rsi_ble_app_init_events();
+
     WFX_RSI_LOG("%s: rsi_task_suspend init_task ", __func__);
-    if (xTaskCreate((TaskFunction_t) rsi_ble_task, "rsi_ble", WFX_RSI_TASK_SZ, NULL, 1, &wfx_rsi.ble_task) != pdPASS)
+    if (xTaskCreate((TaskFunction_t) rsi_ble_event_handling_task, "rsi_ble", WFX_RSI_TASK_SZ, NULL, 1, &wfx_rsi.ble_task) != pdPASS)
     {
         WFX_RSI_LOG("ERR: RSI ble task create");
     }
 
+    WFX_RSI_LOG("%s complete", __func__);
     rsi_task_destroy((rsi_task_handle_t *)wfx_rsi.init_task);
-    WFX_RSI_LOG("%s: wfx_sl_module_init complete", __func__);
     return RSI_SUCCESS;
 }
 
@@ -180,7 +198,7 @@ void rsi_ble_app_clear_event(uint32_t event_num)
 void rsi_ble_on_mtu_event(rsi_ble_event_mtu_t * rsi_ble_mtu)
 {
   WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_mtu_event");
-  event_msg.rsi_ble_mtu = rsi_ble_mtu;
+  memcpy(event_msg.rsi_ble_mtu, rsi_ble_mtu, sizeof(rsi_ble_mtu));
   rsi_ble_app_set_event(RSI_BLE_MTU_EVENT);
 }
 
@@ -198,7 +216,7 @@ void rsi_ble_on_gatt_write_event(uint16_t event_id, rsi_ble_event_write_t *rsi_b
 {
   WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_gatt_write_event");
   event_msg.event_id = event_id;
-  event_msg.rsi_ble_write = rsi_ble_write;
+  memcpy(event_msg.rsi_ble_write, rsi_ble_write, sizeof(rsi_ble_write));
   rsi_ble_app_set_event(RSI_BLE_GATT_WRITE_EVENT);
 }
 
@@ -216,8 +234,7 @@ void rsi_ble_on_enhance_conn_status_event(rsi_ble_event_enhance_conn_status_t *r
   WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_enhance_conn_status_event");
   event_msg.connectionHandle = 1;
   event_msg.bondingHandle = 255;
-  event_msg.resp_enh_conn = resp_enh_conn;
-  memcpy(conn_event_to_app.dev_addr, resp_enh_conn->dev_addr, RSI_DEV_ADDR_LEN);
+  memcpy(event_msg.resp_enh_conn, resp_enh_conn, sizeof(resp_enh_conn));
   rsi_ble_app_set_event(RSI_BLE_CONN_EVENT);
 }
 
@@ -235,8 +252,8 @@ void rsi_ble_on_enhance_conn_status_event(rsi_ble_event_enhance_conn_status_t *r
 void rsi_ble_on_disconnect_event(rsi_ble_event_disconnect_t *resp_disconnect, uint16_t reason)
 {
   WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_disconnect_event");
-  event_msg.resp_disconnect = resp_disconnect;
   event_msg.reason = reason;
+  memcpy(event_msg.resp_disconnect, resp_disconnect, sizeof(resp_disconnect));
   rsi_ble_app_set_event(RSI_BLE_DISCONN_EVENT);
 }
 
@@ -254,9 +271,10 @@ void rsi_ble_on_event_indication_confirmation(uint16_t resp_status, rsi_ble_set_
 {
     WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_event_indication_confirmation");
     event_msg.resp_status = resp_status;
-    event_msg.rsi_ble_event_set_att_rsp = rsi_ble_event_set_att_rsp;
+    memcpy(event_msg.rsi_ble_event_set_att_rsp, rsi_ble_event_set_att_rsp, sizeof(rsi_ble_event_set_att_rsp));
     rsi_ble_app_set_event(RSI_BLE_GATT_INDICATION_CONFIRMATION);
 }
+
 /*==============================================*/
 /**
  * @fn         rsi_ble_app_get_event
@@ -448,60 +466,79 @@ void rsi_ble_add_char_val_att(void * serv_handler, uint16_t handle, uuid_t att_t
     return;
 }
 
+
+/*==============================================*/
+/**
+ * @fn         rsi_ble_add_matter_service
+ * @brief      this function is used to add service for matter
+ * @return     status (uint32_t) 0 for success.
+ * @section description
+ * This function is used at application to create new service.
+ */
+
 uint32_t rsi_ble_add_matter_service(void)
 {
-    uuid_t custom_service    = { 0 };
-    custom_service.size      = 2;
-    custom_service.val.val16 = 0xFFF6;
-    uint8_t data1[230]       = { 0x00 };
+    uuid_t custom_service    = { RSI_BLE_MATTER_CUSTOM_SERVICE_UUID };
+    custom_service.size      = RSI_BLE_MATTER_CUSTOM_SERVICE_SIZE;
+    custom_service.val.val16 = RSI_BLE_MATTER_CUSTOM_SERVICE_VALUE_16;
+    uint8_t data[230]       = { RSI_BLE_MATTER_CUSTOM_SERVICE_DATA };
 
-    static const uuid_t custom_characteristic_RX = { .size             = 16,
-                                                     .reserved         = { 0x00, 0x00, 0x00 },
-                                                     .val.val128.data1 = 0x18EE2EF5,
-                                                     .val.val128.data2 = 0x263D,
-                                                     .val.val128.data3 = 0x4559,
-                                                     .val.val128.data4 = { 0x9F, 0x95, 0x9C, 0x4F, 0x11, 0x9D, 0x9F, 0x42 } };
+    static const uuid_t custom_characteristic_RX = { .size             = RSI_BLE_CUSTOM_CHARACTERISTIC_RX_SIZE,
+                                                     .reserved         = { RSI_BLE_CUSTOM_CHARACTERISTIC_RX_RESERVED },
+                                                     .val.val128.data1 = RSI_BLE_CUSTOM_CHARACTERISTIC_RX_VALUE_128,
+                                                     .val.val128.data2 = RSI_BLE_CUSTOM_CHARACTERISTIC_RX_VALUE_128_DATA_2,
+                                                     .val.val128.data3 = RSI_BLE_CUSTOM_CHARACTERISTIC_RX_VALUE_128_DATA_3,
+                                                     .val.val128.data4 = { RSI_BLE_CUSTOM_CHARACTERISTIC_RX_VALUE_128_DATA_4 } };
 
     rsi_ble_resp_add_serv_t new_serv_resp = { 0 };
     rsi_ble_add_service(custom_service, &new_serv_resp);
 
-    // adding custom characteristic declaration to the custom service
-    rsi_ble_add_char_serv_att(new_serv_resp.serv_handler, new_serv_resp.start_handle + 1,
+    // Adding custom characteristic declaration to the custom service
+    rsi_ble_add_char_serv_att(new_serv_resp.serv_handler,
+                              new_serv_resp.start_handle + RSI_BLE_CHARACTERISTIC_RX_ATTRIBUTE_HANDLE_LOCATION,
                               RSI_BLE_ATT_PROPERTY_WRITE | RSI_BLE_ATT_PROPERTY_READ, // Set read, write, write without response
-                              new_serv_resp.start_handle + 2, custom_characteristic_RX);
+                              new_serv_resp.start_handle + RSI_BLE_CHARACTERISTIC_RX_VALUE_HANDLE_LOCATION,
+                              custom_characteristic_RX);
 
-    // adding characteristic value attribute to the service
-    //  rsi_ble_att2_val_hndl = new_serv_resp.start_handle + 2;
-
-//    event_msg.rsi_ble_measurement_hndl = new_serv_resp.start_handle + 2;
-    rsi_ble_measurement_hndl = new_serv_resp.start_handle + 2;
-    rsi_ble_add_char_val_att(new_serv_resp.serv_handler, new_serv_resp.start_handle + 2, custom_characteristic_RX,
+    // Adding characteristic value attribute to the service
+    rsi_ble_add_char_val_att(new_serv_resp.serv_handler,
+                             new_serv_resp.start_handle + RSI_BLE_CHARACTERISTIC_RX_VALUE_HANDLE_LOCATION,
+                             custom_characteristic_RX,
                              RSI_BLE_ATT_PROPERTY_WRITE | RSI_BLE_ATT_PROPERTY_READ, // Set read, write, write without response
-                             data1, sizeof(data1), 0);
+                             data,
+                             sizeof(data),
+                             ATT_REC_MAINTAIN_IN_HOST);
 
-    static const uuid_t custom_characteristic_TX = { .size             = 16,
-                                                     .reserved         = { 0x00, 0x00, 0x00 },
-                                                     .val.val128.data1 = 0x18EE2EF5,
-                                                     .val.val128.data2 = 0x263D,
-                                                     .val.val128.data3 = 0x4559,
-                                                     .val.val128.data4 = { 0x9F, 0x95, 0x9C, 0x4F, 0x12, 0x9D, 0x9F, 0x42 } };
 
-    // adding custom characteristic declaration to the custom service
-    rsi_ble_add_char_serv_att(new_serv_resp.serv_handler, new_serv_resp.start_handle + 3,
-                              RSI_BLE_ATT_PROPERTY_WRITE_NO_RESPONSE | RSI_BLE_ATT_PROPERTY_WRITE | RSI_BLE_ATT_PROPERTY_READ |
-                                  RSI_BLE_ATT_PROPERTY_NOTIFY |
-                                  RSI_BLE_ATT_PROPERTY_INDICATE, // Set read, write, write without response
-                              new_serv_resp.start_handle + 4, custom_characteristic_TX);
 
-    // adding characteristic value attribute to the service
-    event_msg.rsi_ble_measurement_hndl = new_serv_resp.start_handle + 4;
-   
-    rsi_ble_add_char_val_att(new_serv_resp.serv_handler, new_serv_resp.start_handle + 4, custom_characteristic_TX,
-                             RSI_BLE_ATT_PROPERTY_WRITE_NO_RESPONSE | RSI_BLE_ATT_PROPERTY_WRITE | RSI_BLE_ATT_PROPERTY_READ |
-                                 RSI_BLE_ATT_PROPERTY_NOTIFY |
-                                 RSI_BLE_ATT_PROPERTY_INDICATE, // Set read, write, write without response
-                             data1, sizeof(data1), 0);
+    static const uuid_t custom_characteristic_TX = { .size             = RSI_BLE_CUSTOM_CHARACTERISTIC_TX_SIZE,
+                                                     .reserved         = { RSI_BLE_CUSTOM_CHARACTERISTIC_TX_RESERVED },
+                                                     .val.val128.data1 = RSI_BLE_CUSTOM_CHARACTERISTIC_TX_VALUE_128_DATA_1,
+                                                     .val.val128.data2 = RSI_BLE_CUSTOM_CHARACTERISTIC_TX_VALUE_128_DATA_2,
+                                                     .val.val128.data3 = RSI_BLE_CUSTOM_CHARACTERISTIC_TX_VALUE_128_DATA_3,
+                                                     .val.val128.data4 = { RSI_BLE_CUSTOM_CHARACTERISTIC_TX_VALUE_128_DATA_4 } };
 
-     memset(&data1, 0, sizeof(data1));
+    // Adding custom characteristic declaration to the custom service
+    rsi_ble_add_char_serv_att(new_serv_resp.serv_handler,
+                              new_serv_resp.start_handle + RSI_BLE_CHARACTERISTIC_TX_ATTRIBUTE_HANDLE_LOCATION,
+                              RSI_BLE_ATT_PROPERTY_WRITE_NO_RESPONSE | RSI_BLE_ATT_PROPERTY_WRITE | RSI_BLE_ATT_PROPERTY_READ | RSI_BLE_ATT_PROPERTY_NOTIFY | RSI_BLE_ATT_PROPERTY_INDICATE, // Set read, write, write without response
+                              new_serv_resp.start_handle + RSI_BLE_CHARACTERISTIC_TX_MEASUREMENT_HANDLE_LOCATION,
+                              custom_characteristic_TX);
+
+    // Adding characteristic value attribute to the service
+    event_msg.rsi_ble_measurement_hndl = new_serv_resp.start_handle + RSI_BLE_MEASUREMENT_HANDLE_LOCATION;
+
+    // Adding characteristic value attribute to the service
+    event_msg.rsi_ble_gatt_server_client_config_hndl = new_serv_resp.start_handle + RSI_BLE_GATT_SERVER_CLIENT_HANDLE_LOCATION;
+
+    rsi_ble_add_char_val_att(new_serv_resp.serv_handler,
+                             event_msg.rsi_ble_measurement_hndl,
+                             custom_characteristic_TX,
+                             RSI_BLE_ATT_PROPERTY_WRITE_NO_RESPONSE | RSI_BLE_ATT_PROPERTY_WRITE | RSI_BLE_ATT_PROPERTY_READ | RSI_BLE_ATT_PROPERTY_NOTIFY | RSI_BLE_ATT_PROPERTY_INDICATE, // Set read, write, write without response
+                             data,
+                             sizeof(data),
+                             ATT_REC_MAINTAIN_IN_HOST);
+
+    memset(&data, 0, sizeof(data));
     return 0;
 }

@@ -27,8 +27,6 @@
 
 #include "FreeRTOS.h"
 #include "gatt_db.h"
-//#include "sl_bgapi.h"
-//#include "sl_bt_api.h"
 #include "timers.h"
 
 extern "C" {
