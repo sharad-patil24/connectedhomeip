@@ -46,6 +46,10 @@ using namespace ::chip::Inet;
 using namespace ::chip::DeviceLayer;
 
 #include <crypto/CHIPCryptoPAL.h>
+
+#include "event_groups.h"
+#include "wfx_rsi.h"
+
 // If building with the EFR32-provided crypto backend, we can use the
 // opaque keystore
 #if CHIP_CRYPTO_PLATFORM
@@ -148,8 +152,14 @@ CHIP_ERROR EFR32MatterConfig::InitMatter(const char * appName)
     EFR32_LOG("Init CHIP Stack");
     // Init Chip memory management before the stack
     ReturnErrorOnFailure(chip::Platform::MemoryInit());
+
+//    EFR32_LOG("Init RSI 911x Platform");
+//    wfx_rsi_init_platform();
+
+    EFR32_LOG("Init CHIP PlatformMgr ChipStack");
     ReturnErrorOnFailure(PlatformMgr().InitChipStack());
 
+    EFR32_LOG("Init Set BLE Device Name");
     chip::DeviceLayer::ConnectivityMgr().SetBLEDeviceName(appName);
 
 #if CHIP_ENABLE_OPENTHREAD

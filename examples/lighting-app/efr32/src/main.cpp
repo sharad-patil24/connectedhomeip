@@ -23,6 +23,7 @@
 #include "init_efrPlatform.h"
 #include "sl_simple_button_instances.h"
 #include "sl_system_kernel.h"
+#include "wfx_host_events.h"
 #include <DeviceInfoProviderImpl.h>
 #include <app/server/Server.h>
 #include <credentials/DeviceAttestationCredsProvider.h>
@@ -33,7 +34,7 @@
 #include <credentials/examples/DeviceAttestationCredsExample.h>
 #endif
 
-#define BLE_DEV_NAME "SiLabs-Light"
+#define BLE_DEV_NAME "Bhavani-BLE"
 using namespace ::chip;
 using namespace ::chip::Inet;
 using namespace ::chip::DeviceLayer;
