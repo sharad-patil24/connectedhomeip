@@ -91,11 +91,11 @@ typedef struct sl_wfx_msg_s
     uint16_t reason;
     uint16_t event_id;
     uint16_t resp_status;
-    rsi_ble_event_mtu_t * rsi_ble_mtu;
-    rsi_ble_event_write_t * rsi_ble_write;
-    rsi_ble_event_enhance_conn_status_t * resp_enh_conn;
+    rsi_ble_event_mtu_t  rsi_ble_mtu;
+    rsi_ble_event_write_t  rsi_ble_write;
+    rsi_ble_event_enhance_conn_status_t  resp_enh_conn;
     rsi_ble_event_disconnect_t * resp_disconnect;
-    rsi_ble_set_att_resp_t * rsi_ble_event_set_att_rsp;
+    rsi_ble_set_att_resp_t  rsi_ble_event_set_att_rsp;
     uint32_t ble_app_event_map;
     uint32_t ble_app_event_mask;
     uint16_t rsi_ble_measurement_hndl;

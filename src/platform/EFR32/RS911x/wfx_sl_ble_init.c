@@ -204,7 +204,8 @@ void rsi_ble_app_clear_event(uint32_t event_num)
 void rsi_ble_on_mtu_event(rsi_ble_event_mtu_t * rsi_ble_mtu)
 {
   WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_mtu_event");
-  memcpy(event_msg.rsi_ble_mtu, rsi_ble_mtu, sizeof(rsi_ble_event_mtu_t));
+  memset(&event_msg.rsi_ble_mtu,0,sizeof(rsi_ble_event_mtu_t));
+  memcpy(&event_msg.rsi_ble_mtu,rsi_ble_mtu,sizeof(rsi_ble_event_mtu_t));
   rsi_ble_app_set_event(RSI_BLE_MTU_EVENT);
 }
 
@@ -221,8 +222,9 @@ void rsi_ble_on_mtu_event(rsi_ble_event_mtu_t * rsi_ble_mtu)
 void rsi_ble_on_gatt_write_event(uint16_t event_id, rsi_ble_event_write_t *rsi_ble_write)
 {
   WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_gatt_write_event");
+  memset(&event_msg.rsi_ble_write, 0, sizeof(rsi_ble_event_write_t));
   event_msg.event_id = event_id;
-  memcpy(event_msg.rsi_ble_write, rsi_ble_write, sizeof(rsi_ble_event_write_t));
+  memcpy(&event_msg.rsi_ble_write,rsi_ble_write,sizeof(rsi_ble_event_write_t));
   rsi_ble_app_set_event(RSI_BLE_GATT_WRITE_EVENT);
 }
 
@@ -240,7 +242,7 @@ void rsi_ble_on_enhance_conn_status_event(rsi_ble_event_enhance_conn_status_t *r
   WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_enhance_conn_status_event");
   event_msg.connectionHandle = 1;
   event_msg.bondingHandle = 255;
-  memcpy(event_msg.resp_enh_conn, resp_enh_conn, sizeof(rsi_ble_event_enhance_conn_status_t));
+  memcpy(event_msg.resp_enh_conn.dev_addr, resp_enh_conn->dev_addr, RSI_DEV_ADDR_LEN);
   rsi_ble_app_set_event(RSI_BLE_CONN_EVENT);
 }
 
@@ -259,7 +261,7 @@ void rsi_ble_on_disconnect_event(rsi_ble_event_disconnect_t *resp_disconnect, ui
 {
   WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_disconnect_event");
   event_msg.reason = reason;
-  memcpy(event_msg.resp_disconnect, resp_disconnect, sizeof(rsi_ble_event_disconnect_t));
+  memcpy(event_msg.resp_disconnect,resp_disconnect,sizeof(rsi_ble_event_disconnect_t));
   rsi_ble_app_set_event(RSI_BLE_DISCONN_EVENT);
 }
 
@@ -277,7 +279,7 @@ void rsi_ble_on_event_indication_confirmation(uint16_t resp_status, rsi_ble_set_
 {
     WFX_RSI_LOG(" RSI_BLE : rsi_ble_on_event_indication_confirmation");
     event_msg.resp_status = resp_status;
-    memcpy(event_msg.rsi_ble_event_set_att_rsp, rsi_ble_event_set_att_rsp, sizeof(rsi_ble_set_att_resp_t));
+    memcpy(&event_msg.rsi_ble_event_set_att_rsp, rsi_ble_event_set_att_rsp, sizeof(rsi_ble_set_att_resp_t));
     rsi_ble_app_set_event(RSI_BLE_GATT_INDICATION_CONFIRMATION);
 }
 

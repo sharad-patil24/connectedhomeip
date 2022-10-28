@@ -55,8 +55,8 @@ public:
     void HandleBootEvent(void);
     void HandleConnectEvent(void);//volatile sl_bt_msg_t * evt);
     void HandleConnectionCloseEvent(uint16_t reason);
-    void HandleWriteEvent(rsi_ble_event_write_t * evt);
-    void UpdateMtu(rsi_ble_event_mtu_t * evt);
+    void HandleWriteEvent(rsi_ble_event_write_t  evt);
+    void UpdateMtu(rsi_ble_event_mtu_t  evt);
     void HandleTxConfirmationEvent(BLE_CONNECTION_OBJECT conId);
     void HandleTXCharCCCDWrite(void);
     void HandleSoftTimerEvent(void);

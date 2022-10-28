@@ -116,8 +116,9 @@ void rsi_ble_event_handling_task(void)
             }
             break;
             case RSI_BLE_GATT_INDICATION_CONFIRMATION: {
-                chip::DeviceLayer::Internal::BLEMgrImpl().HandleTxConfirmationEvent(1);
                 WFX_RSI_LOG("RSI_BLE : indication confirmation");
+                chip::DeviceLayer::Internal::BLEMgrImpl().HandleTxConfirmationEvent(1);
+                rsi_ble_app_clear_event(RSI_BLE_GATT_INDICATION_CONFIRMATION);
             }
             break;
 
@@ -401,7 +402,7 @@ bool BLEManagerImpl::SendIndication(BLE_CONNECTION_OBJECT conId, const ChipBleUU
 {
     int32_t status = 0;
     WFX_RSI_LOG("In send indication");
-    status = rsi_ble_indicate_value(conn_event_to_app.dev_addr, event_msg.rsi_ble_measurement_hndl, (data->DataLength()), data->Start());
+    status = rsi_ble_indicate_value(event_msg.resp_enh_conn.dev_addr, event_msg.rsi_ble_measurement_hndl, (data->DataLength()), data->Start());
     if (status != RSI_SUCCESS)
     {
         WFX_RSI_LOG("indication %d failed with error code %lx ", status);
@@ -662,7 +663,7 @@ CHIP_ERROR BLEManagerImpl::StopAdvertising(void)
     return err;
 }
 
-void BLEManagerImpl::UpdateMtu(rsi_ble_event_mtu_t * evt)
+void BLEManagerImpl::UpdateMtu(rsi_ble_event_mtu_t  evt)
 {
     CHIPoBLEConState * bleConnState = GetConnectionState(event_msg.connectionHandle);
     if (bleConnState != NULL)
@@ -676,10 +677,10 @@ void BLEManagerImpl::UpdateMtu(rsi_ble_event_mtu_t * evt)
         // TODO: https://github.com/project-chip/connectedhomeip/issues/2569
         // tracks making this safe with a check or explaining why no check
         // is needed.
-        ChipLogProgress(DeviceLayer, "DriveBLEState UpdateMtu %d", evt->mtu_size);
+        ChipLogProgress(DeviceLayer, "DriveBLEState UpdateMtu %d", evt.mtu_size);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
-        bleConnState->mtu = evt->mtu_size;
+        bleConnState->mtu = evt.mtu_size;
 #pragma GCC diagnostic pop
         ;
     }
@@ -736,22 +737,22 @@ void BLEManagerImpl::HandleConnectionCloseEvent(uint16_t reason)
     }
 }
 
-void BLEManagerImpl::HandleWriteEvent(rsi_ble_event_write_t * evt)
+void BLEManagerImpl::HandleWriteEvent(rsi_ble_event_write_t evt)
 {
     // RSI_BLE_WRITE_REQUEST_EVENT
-    ChipLogProgress(DeviceLayer, "Char Write Req, packet type %d", evt->pkt_type);
+    ChipLogProgress(DeviceLayer, "Char Write Req, packet type %d", evt.pkt_type);
     uint8_t attribute = (uint8_t) event_msg.rsi_ble_measurement_hndl;
 
     WFX_RSI_LOG("attribute = %d,rsi_ble_measurement_hndl = %d", attribute, event_msg.rsi_ble_measurement_hndl);
 
-    if (evt->handle[0] == (uint8_t) event_msg.rsi_ble_measurement_hndl + 1) //TODO:: compare the handle exactly
+    if (evt.handle[0] == (uint8_t) event_msg.rsi_ble_gatt_server_client_config_hndl) //TODO:: compare the handle exactly
     {
         WFX_RSI_LOG("Inside HandleTXCharCCCDWrite ");
         HandleTXCharCCCDWrite();
     }
     else
     {
-        HandleRXCharWrite(evt);
+        HandleRXCharWrite(&evt);
     }
 }
 
@@ -769,6 +770,7 @@ void BLEManagerImpl::HandleTXCharCCCDWrite(void)
 
 void BLEManagerImpl::HandleRXCharWrite(rsi_ble_event_write_t * evt)
 {
+    uint8_t conId = 1;
     CHIP_ERROR err = CHIP_NO_ERROR;
     System::PacketBufferHandle buf;
     uint16_t writeLen = evt->length;
@@ -789,7 +791,7 @@ void BLEManagerImpl::HandleRXCharWrite(rsi_ble_event_write_t * evt)
     {
         ChipDeviceEvent event;
         event.Type                        = DeviceEventType::kCHIPoBLEWriteReceived;
-        event.CHIPoBLEWriteReceived.ConId = 1;
+        event.CHIPoBLEWriteReceived.ConId = conId;
         event.CHIPoBLEWriteReceived.Data  = std::move(buf).UnsafeRelease();
         err                               = PlatformMgr().PostEvent(&event);
     }
@@ -804,16 +806,16 @@ exit:
 void BLEManagerImpl::HandleTxConfirmationEvent(BLE_CONNECTION_OBJECT conId)
 {
     ChipDeviceEvent event;
-    uint8_t timerHandle = sInstance.GetTimerHandle(conId, false);
-
-    ChipLogProgress(DeviceLayer, "Tx Confirmation received");
-
-    // stop indication confirmation timer // TODO:: Need to find the proper repleacement
-    if (timerHandle < kMaxConnections)
-    {
-        ChipLogProgress(DeviceLayer, " stop soft timer");
-        // sl_bt_system_set_lazy_soft_timer(0, 0, timerHandle, false);
-    }
+//    uint8_t timerHandle = sInstance.GetTimerHandle(conId, false);
+//
+//    ChipLogProgress(DeviceLayer, "Tx Confirmation received");
+//
+//    // stop indication confirmation timer // TODO:: Need to find the proper repleacement
+//    if (timerHandle < kMaxConnections)
+//    {
+//        ChipLogProgress(DeviceLayer, " stop soft timer");
+//        // sl_bt_system_set_lazy_soft_timer(0, 0, timerHandle, false);
+//    }
 
     event.Type                          = DeviceEventType::kCHIPoBLEIndicateConfirm;
     event.CHIPoBLEIndicateConfirm.ConId = conId;
