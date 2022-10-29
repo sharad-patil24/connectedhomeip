@@ -56,6 +56,13 @@
 
 #define ATT_REC_IN_HOST 0
 
+#define RSI_BT_CTRL_REMOTE_USER_TERMINATED 0x4E13
+#define RSI_BT_CTRL_REMOTE_DEVICE_TERMINATED_CONNECTION_DUE_TO_LOW_RESOURCES 0x4E14
+#define RSI_BT_CTRL_REMOTE_POWERING_OFF 0x4E15
+#define RSI_BT_CTRL_TERMINATED_MIC_FAILURE 0x4E3D
+#define RSI_BT_FAILED_TO_ESTABLISH_CONN 0x4E3E
+#define RSI_BT_INVALID_RANGE 0x4E60
+
 #define RSI_BLE_MATTER_CUSTOM_SERVICE_UUID 0
 #define RSI_BLE_MATTER_CUSTOM_SERVICE_SIZE 2
 #define RSI_BLE_MATTER_CUSTOM_SERVICE_VALUE_16 0xFFF6
@@ -100,6 +107,8 @@ typedef struct sl_wfx_msg_s
     uint32_t ble_app_event_mask;
     uint16_t rsi_ble_measurement_hndl;
     uint16_t rsi_ble_gatt_server_client_config_hndl;
+    uint16_t subscribed;
+
 } sl_wfx_msg_t;
 
 int32_t wfx_sl_module_init(void);

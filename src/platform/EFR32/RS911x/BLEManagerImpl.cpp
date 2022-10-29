@@ -70,9 +70,8 @@ void rsi_ble_event_handling_task(void)
 {
     int32_t event_id;
 
-    // int32_t event_id;
-    //WFX_RSI_LOG("StartAdvertising");
-    //chip::DeviceLayer::Internal::BLEManagerImpl().StartAdvertising(); //TODO:: Called on after init of module
+    WFX_RSI_LOG("StartAdvertising");
+    chip::DeviceLayer::Internal::BLEManagerImpl().StartAdvertising(); //TODO:: Called on after init of module
 
     // Application event map
     while (1)
@@ -713,19 +712,19 @@ void BLEManagerImpl::HandleConnectionCloseEvent(uint16_t reason)
         event.Type                          = DeviceEventType::kCHIPoBLEConnectionError;
         event.CHIPoBLEConnectionError.ConId = connHandle;
 
-        //        switch (reason)
-        //        {
-        //
-        //        case RSI_REMOTE_DEV_TERMINATE_CONN:
-        //        case RSI_BT_CTRL_REMOTE_DEVICE_TERMINATED_CONNECTION_DUE_TO_LOW_RESOURCES:
-        //        case RSI_BT_CTRL_REMOTE_POWERING_OFF:
-        //           event.CHIPoBLEConnectionError.Reason = BLE_ERROR_REMOTE_DEVICE_DISCONNECTED;
-        //        break;
-        //        default:
-        //           event.CHIPoBLEConnectionError.Reason = BLE_ERROR_CHIPOBLE_PROTOCOL_ABORT;
-        //        }
+                switch (reason)
+                {
 
-        //        ChipLogProgress(DeviceLayer, "BLE GATT connection closed (con %u, reason %u)", connHandle, conn_evt->reason);
+                case RSI_BT_CTRL_REMOTE_USER_TERMINATED:
+                case RSI_BT_CTRL_REMOTE_DEVICE_TERMINATED_CONNECTION_DUE_TO_LOW_RESOURCES:
+                case RSI_BT_CTRL_REMOTE_POWERING_OFF:
+                   event.CHIPoBLEConnectionError.Reason = BLE_ERROR_REMOTE_DEVICE_DISCONNECTED;
+                break;
+                default:
+                   event.CHIPoBLEConnectionError.Reason = BLE_ERROR_CHIPOBLE_PROTOCOL_ABORT;
+                }
+
+                ChipLogProgress(DeviceLayer, "BLE GATT connection closed (con %u, reason %x)", connHandle, reason);
 
         PlatformMgr().PostEventOrDie(&event);
 
@@ -741,14 +740,14 @@ void BLEManagerImpl::HandleWriteEvent(rsi_ble_event_write_t evt)
 {
     // RSI_BLE_WRITE_REQUEST_EVENT
     ChipLogProgress(DeviceLayer, "Char Write Req, packet type %d", evt.pkt_type);
-    uint8_t attribute = (uint8_t) event_msg.rsi_ble_measurement_hndl;
+   // uint8_t attribute = (uint8_t) event_msg.rsi_ble_measurement_hndl;
 
-    WFX_RSI_LOG("attribute = %d,rsi_ble_measurement_hndl = %d", attribute, event_msg.rsi_ble_measurement_hndl);
+    WFX_RSI_LOG("event_msg.rsi_ble_gatt_server_client_config_hndl = %d", event_msg.rsi_ble_gatt_server_client_config_hndl);
 
     if (evt.handle[0] == (uint8_t) event_msg.rsi_ble_gatt_server_client_config_hndl) //TODO:: compare the handle exactly
     {
         WFX_RSI_LOG("Inside HandleTXCharCCCDWrite ");
-        HandleTXCharCCCDWrite();
+        HandleTXCharCCCDWrite(&evt);
     }
     else
     {
@@ -756,16 +755,55 @@ void BLEManagerImpl::HandleWriteEvent(rsi_ble_event_write_t evt)
     }
 }
 
-void BLEManagerImpl::HandleTXCharCCCDWrite(void)
+void BLEManagerImpl::HandleTXCharCCCDWrite(rsi_ble_event_write_t *evt)
 {
     CHIP_ERROR err = CHIP_NO_ERROR;
+  //  CHIPoBLEConState * bleConnState;
+    bool isIndicationEnabled = false;
     ChipDeviceEvent event;
-    // whether the client is enabling or disabling indications.
+
+//    bleConnState = GetConnectionState(evt->data.evt_gatt_server_user_write_request.connection);
+//    VerifyOrExit(bleConnState != NULL, err = CHIP_ERROR_NO_MEMORY);
+
+    // Determine if the client is enabling or disabling notification/indication.
+    if(evt->att_value[0] == 1){
+        isIndicationEnabled = true;
+    }
+    ChipLogProgress(DeviceLayer, "HandleTXcharCCCDWrite - Config Flags value : %d",
+                    evt->att_value[0] );
+    ChipLogProgress(DeviceLayer, "CHIPoBLE %s received", isIndicationEnabled ? "subscribe" : "unsubscribe");
+
+    if (isIndicationEnabled)
     {
-        event.Type                    = DeviceEventType::kCHIPoBLESubscribe;
+//        // If indications are not already enabled for the connection...
+//        if (!event_msg->subscribed)
+//        {
+            event_msg.subscribed = 1;
+            // Post an event to the CHIP queue to process either a CHIPoBLE Subscribe or Unsubscribe based on
+            // whether the client is enabling or disabling indications.
+            {
+                event.Type                    = DeviceEventType::kCHIPoBLESubscribe;
+                event.CHIPoBLESubscribe.ConId = 1;
+                err                           = PlatformMgr().PostEvent(&event);
+            }
+       //}
+    }
+    else
+    {
+        event_msg.subscribed      = 0;
+        event.Type                    = DeviceEventType::kCHIPoBLEUnsubscribe;
         event.CHIPoBLESubscribe.ConId = 1;
         err                           = PlatformMgr().PostEvent(&event);
     }
+
+//    CHIP_ERROR err = CHIP_NO_ERROR;
+//    ChipDeviceEvent event;
+//    // whether the client is enabling or disabling indications.
+//    {
+//        event.Type                    = DeviceEventType::kCHIPoBLESubscribe;
+//        event.CHIPoBLESubscribe.ConId = 1;
+//        err                           = PlatformMgr().PostEvent(&event);
+//    }
 }
 
 void BLEManagerImpl::HandleRXCharWrite(rsi_ble_event_write_t * evt)

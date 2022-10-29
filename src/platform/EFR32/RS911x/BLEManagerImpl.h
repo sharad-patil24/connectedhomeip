@@ -58,7 +58,7 @@ public:
     void HandleWriteEvent(rsi_ble_event_write_t  evt);
     void UpdateMtu(rsi_ble_event_mtu_t  evt);
     void HandleTxConfirmationEvent(BLE_CONNECTION_OBJECT conId);
-    void HandleTXCharCCCDWrite(void);
+    void HandleTXCharCCCDWrite(rsi_ble_event_write_t *evt);
     void HandleSoftTimerEvent(void);
 
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
