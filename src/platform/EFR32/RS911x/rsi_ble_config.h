@@ -186,6 +186,24 @@
 //! Scan command parameters
 /*=======================================================================*/
 
+#define RSI_BLE_SCAN_TYPE        SCAN_TYPE_ACTIVE
+#define RSI_BLE_SCAN_FILTER_TYPE SCAN_FILTER_TYPE_ALL
+
+//!Scan status
+#define RSI_BLE_START_SCAN 0x01
+#define RSI_BLE_STOP_SCAN  0x00
+
+//!Scan types
+#define SCAN_TYPE_ACTIVE  0x01
+#define SCAN_TYPE_PASSIVE 0x00
+
+//!Scan filters
+#define SCAN_FILTER_TYPE_ALL             0x00
+#define SCAN_FILTER_TYPE_ONLY_WHITE_LIST 0x01
+
+#define RSI_SEL_INTERNAL_ANTENNA 0x00
+#define RSI_SEL_EXTERNAL_ANTENNA 0x01
+
 #define SL_WFX_BLE_SCAN_TYPE SCAN_TYPE_ACTIVE
 #define SL_WFX_BLE_SCAN_FILTER_TYPE SCAN_FILTER_TYPE_ALL
 
