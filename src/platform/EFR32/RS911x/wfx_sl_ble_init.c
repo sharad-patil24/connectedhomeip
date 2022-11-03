@@ -48,18 +48,41 @@ StackType_t driverRsiTaskStack[WFX_RSI_WLAN_TASK_SZ] = { 0 };
 /* Structure that will hold the TCB of the wfxRsi Task being created. */
 StaticTask_t driverRsiTaskBuffer;
 
-StaticTask_t rsiBLETaskStruct;
 
-/* wfxRsi Task will use as its stack */
-StackType_t wfxBLETaskStack[WFX_RSI_TASK_SZ] = { 0 };
+
+
+SemaphoreHandle_t sl_ble_mutex      = NULL;
+StaticSemaphore_t sl_ble_MutexBuffer;
+
 
 int32_t wfx_sl_module_init(void)
 {
     int32_t status;
+    sl_status_t result;
     uint8_t buf[RSI_RESPONSE_HOLD_BUFF_SIZE];
     extern void rsi_hal_board_init(void);
 
+    if ((sl_ble_mutex = xSemaphoreCreateMutexStatic(&sl_ble_MutexBuffer)) == NULL)
+    {
+        return SL_STATUS_FAIL;
+    }
+
     WFX_RSI_LOG("%s: starting(HEAP_SZ = %d)", __func__, SL_HEAP_SIZE);
+
+    if (xSemaphoreTake(wfx_mutex, TICKS_TO_WAIT_500) != pdTRUE)
+    {
+        EFR32_LOG("*ERR*Wi-Fi driver mutex timo");
+        status = SL_STATUS_TIMEOUT;
+    }
+
+    result = sl_ble_mutex_lock();
+
+    if (result != SL_STATUS_OK) {
+        WFX_RSI_LOG("%s: Error while taking the sl_ble_mutex_lock");
+        //if driver lock is not successful, return immediatly
+        return result;
+    }
+
 
     //! Driver initialization
     status = rsi_driver_init(wfx_rsi_drv_buf, WFX_RSI_BUF_SZ);
@@ -128,33 +151,53 @@ int32_t wfx_sl_module_init(void)
         return status;
     }
 
-    // registering the GAP callback functions
-    rsi_ble_gap_register_callbacks(NULL, NULL, rsi_ble_on_disconnect_event, NULL, NULL, NULL, rsi_ble_on_enhance_conn_status_event,
-                                   NULL, NULL, NULL);
+    result = sl_ble_mutex_unlock();
 
-    // registering the GATT call back functions
-    rsi_ble_gatt_register_callbacks(NULL, NULL, NULL, NULL, NULL, NULL, NULL, rsi_ble_on_gatt_write_event, NULL, NULL, NULL,
-                                    rsi_ble_on_mtu_event, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-                                    rsi_ble_on_event_indication_confirmation, NULL);
-
-    WFX_RSI_LOG("registering rsi_ble_add_service");
-
-    //  Exchange of GATT info with BLE stack
-    rsi_ble_add_matter_service();
-
-    //  initializing the application events map
-    rsi_ble_app_init_events();
-
-    wfx_rsi.ble_task = xTaskCreateStatic((TaskFunction_t) rsi_ble_event_handling_task, "rsi_ble", WFX_RSI_TASK_SZ, NULL, 1, wfxBLETaskStack, &rsiBLETaskStruct);
-    WFX_RSI_LOG("%s: rsi_task_suspend init_task ", __func__);
-    if (wfx_rsi.ble_task == NULL)
-    {
-        WFX_RSI_LOG("%s: error: failed to create ble task.", __func__);
+    if (result != SL_STATUS_OK) {
+        WFX_RSI_LOG("%s: error: failed to sl_ble_mutex_unlock.", __func__);
+        return RSI_ERROR_INVALID_PARAM;
     }
+
 
     WFX_RSI_LOG("%s complete", __func__);
     rsi_task_destroy((rsi_task_handle_t *)wfx_rsi.init_task);
     return RSI_SUCCESS;
+}
+
+
+/****************************************************************************
+ * @fn  sl_status_t sl_ble_mutex_lock(void)
+ * @brief
+ * Called when the driver needs to lock its access
+ * @returns Returns SL_STATUS_OK if successful,
+ *SL_STATUS_TIMEOUT otherwise
+ *****************************************************************************/
+sl_status_t sl_ble_mutex_lock(void)
+{
+
+    sl_status_t status = SL_STATUS_OK;
+
+    if (xSemaphoreTake(sl_ble_mutex, TICKS_TO_WAIT_500) != pdTRUE)
+    {
+        EFR32_LOG("*ERR*Wi-Fi driver mutex timo");
+        status = SL_STATUS_TIMEOUT;
+    }
+
+    return status;
+}
+
+
+/****************************************************************************
+ * @fn  sl_status_t sl_ble_mutex_unlock(void)
+ * @brief
+ * Called when the driver needs to unlock its access
+ * @returns Returns SL_STATUS_OK
+ *****************************************************************************/
+sl_status_t sl_ble_mutex_unlock(void)
+{
+    xSemaphoreGive(sl_ble_mutex);
+
+    return SL_STATUS_OK;
 }
 
 

@@ -59,19 +59,64 @@ extern rsi_ble_event_conn_status_t conn_event_to_app;
 extern sl_wfx_msg_t event_msg;
 
 StaticTask_t busInitTaskStruct;
+StaticTask_t rsiBLETaskStruct;
 
 /* wfxRsi Task will use as its stack */
 StackType_t wfxRsiInitTaskStack[WFX_RSI_TASK_SZ] = { 0 };
 
+/* wfxRsi Task will use as its stack */xSemaphoreCreateMutexStatic
+StackType_t wfxBLETaskStack[WFX_RSI_TASK_SZ] = { 0 };
+
 using namespace ::chip;
 using namespace ::chip::Ble;
+
+void ble_init()
+{
+    // registering the GAP callback functions
+    rsi_ble_gap_register_callbacks(NULL, NULL, rsi_ble_on_disconnect_event, NULL, NULL, NULL, rsi_ble_on_enhance_conn_status_event,
+                                   NULL, NULL, NULL);
+
+    // registering the GATT call back functions
+    rsi_ble_gatt_register_callbacks(NULL, NULL, NULL, NULL, NULL, NULL, NULL, rsi_ble_on_gatt_write_event, NULL, NULL, NULL,
+                                    rsi_ble_on_mtu_event, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+                                    rsi_ble_on_event_indication_confirmation, NULL);
+
+    WFX_RSI_LOG("registering rsi_ble_add_service");
+
+    //  Exchange of GATT info with BLE stack
+    rsi_ble_add_matter_service();
+
+    //  initializing the application events map
+    rsi_ble_app_init_events();
+
+    WFX_RSI_LOG("StartAdvertising");
+    chip::DeviceLayer::Internal::BLEManagerImpl().StartAdvertising(); //TODO:: Called on after init of module
+
+}
 
 void rsi_ble_event_handling_task(void)
 {
     int32_t event_id;
+    sl_status_t result;
 
-    WFX_RSI_LOG("StartAdvertising");
-    chip::DeviceLayer::Internal::BLEManagerImpl().StartAdvertising(); //TODO:: Called on after init of module
+    WFX_RSI_LOG("%s starting", __func__);
+
+    result = sl_ble_mutex_lock();
+    if (result != SL_STATUS_OK) {
+        //if driver lock is not successful
+        WFX_RSI_LOG("%s: Error while taking the sl_ble_mutex_lock");
+    }
+
+    ble_init();
+
+    result = sl_ble_mutex_unlock();
+
+    if (result != SL_STATUS_OK) {
+
+        //if driver unlock is not successful
+        WFX_RSI_LOG("%s: error: failed to sl_ble_mutex_unlock.", __func__);
+        return RSI_ERROR_INVALID_PARAM;
+    }
 
     // Application event map
     while (1)
@@ -201,6 +246,13 @@ CHIP_ERROR BLEManagerImpl::_Init()
 
     if (NULL == wfx_rsi.init_task) {
         WFX_RSI_LOG("%s: error: failed to create task.", __func__);
+    }
+
+    wfx_rsi.ble_task = xTaskCreateStatic((TaskFunction_t) rsi_ble_event_handling_task, "rsi_ble", WFX_RSI_TASK_SZ, NULL, 1, wfxBLETaskStack, &rsiBLETaskStruct);
+
+    if (wfx_rsi.ble_task == NULL)
+    {
+        WFX_RSI_LOG("%s: error: failed to create ble task.", __func__);
     }
 
     // Initialize the CHIP BleLayer.

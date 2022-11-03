@@ -112,6 +112,8 @@ typedef struct sl_wfx_msg_s
 } sl_wfx_msg_t;
 
 int32_t wfx_sl_module_init(void);
+sl_status_t sl_ble_mutex_lock(void);
+sl_status_t sl_ble_mutex_unlock(void);
 void rsi_ble_on_connect_event(rsi_ble_event_conn_status_t * resp_conn);
 void rsi_ble_on_disconnect_event(rsi_ble_event_disconnect_t * resp_disconnect, uint16_t reason);
 void rsi_ble_on_enhance_conn_status_event(rsi_ble_event_enhance_conn_status_t * resp_enh_conn);
