@@ -69,12 +69,6 @@ int32_t wfx_sl_module_init(void)
 
     WFX_RSI_LOG("%s: starting(HEAP_SZ = %d)", __func__, SL_HEAP_SIZE);
 
-    if (xSemaphoreTake(wfx_mutex, TICKS_TO_WAIT_500) != pdTRUE)
-    {
-        EFR32_LOG("*ERR*Wi-Fi driver mutex timo");
-        status = SL_STATUS_TIMEOUT;
-    }
-
     result = sl_ble_mutex_lock();
 
     if (result != SL_STATUS_OK) {
@@ -179,7 +173,7 @@ sl_status_t sl_ble_mutex_lock(void)
 
     if (xSemaphoreTake(sl_ble_mutex, TICKS_TO_WAIT_500) != pdTRUE)
     {
-        EFR32_LOG("*ERR*Wi-Fi driver mutex timo");
+        WFX_RSI_LOG("*ERR*Wi-Fi driver mutex time out");
         status = SL_STATUS_TIMEOUT;
     }
 
@@ -195,7 +189,9 @@ sl_status_t sl_ble_mutex_lock(void)
  *****************************************************************************/
 sl_status_t sl_ble_mutex_unlock(void)
 {
+    WFX_RSI_LOG("%s Start", __func__);
     xSemaphoreGive(sl_ble_mutex);
+    WFX_RSI_LOG("%s End", __func__);
 
     return SL_STATUS_OK;
 }

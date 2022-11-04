@@ -64,7 +64,7 @@ StaticTask_t rsiBLETaskStruct;
 /* wfxRsi Task will use as its stack */
 StackType_t wfxRsiInitTaskStack[WFX_RSI_TASK_SZ] = { 0 };
 
-/* wfxRsi Task will use as its stack */xSemaphoreCreateMutexStatic
+/* wfxRsi Task will use as its stack */
 StackType_t wfxBLETaskStack[WFX_RSI_TASK_SZ] = { 0 };
 
 using namespace ::chip;
@@ -115,7 +115,6 @@ void rsi_ble_event_handling_task(void)
 
         //if driver unlock is not successful
         WFX_RSI_LOG("%s: error: failed to sl_ble_mutex_unlock.", __func__);
-        return RSI_ERROR_INVALID_PARAM;
     }
 
     // Application event map
