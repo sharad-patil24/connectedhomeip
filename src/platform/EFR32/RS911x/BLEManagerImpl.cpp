@@ -57,6 +57,7 @@ extern "C" {
 extern uint16_t rsi_ble_measurement_hndl;
 extern rsi_ble_event_conn_status_t conn_event_to_app;
 extern sl_wfx_msg_t event_msg;
+extern rsi_semaphore_handle_t sl_ble_sem;
 
 StaticTask_t busInitTaskStruct;
 StaticTask_t rsiBLETaskStruct;
@@ -72,6 +73,8 @@ using namespace ::chip::Ble;
 
 void ble_init()
 {
+    WFX_RSI_LOG("%s starting", __func__);
+
     // registering the GAP callback functions
     rsi_ble_gap_register_callbacks(NULL, NULL, rsi_ble_on_disconnect_event, NULL, NULL, NULL, rsi_ble_on_enhance_conn_status_event,
                                    NULL, NULL, NULL);
@@ -91,31 +94,19 @@ void ble_init()
 
     WFX_RSI_LOG("StartAdvertising");
     chip::DeviceLayer::Internal::BLEManagerImpl().StartAdvertising(); //TODO:: Called on after init of module
-
+    WFX_RSI_LOG("%s  Ended", __func__);
 }
 
 void rsi_ble_event_handling_task(void)
 {
     int32_t event_id;
-    sl_status_t result;
 
     WFX_RSI_LOG("%s starting", __func__);
 
-    result = sl_ble_mutex_lock();
-    if (result != SL_STATUS_OK) {
-        //if driver lock is not successful
-        WFX_RSI_LOG("%s: Error while taking the sl_ble_mutex_lock");
-    }
+    //! if events are not received, loop will be continued
+    rsi_semaphore_wait(&sl_ble_sem, 0);
 
     ble_init();
-
-    result = sl_ble_mutex_unlock();
-
-    if (result != SL_STATUS_OK) {
-
-        //if driver unlock is not successful
-        WFX_RSI_LOG("%s: error: failed to sl_ble_mutex_unlock.", __func__);
-    }
 
     // Application event map
     while (1)
@@ -173,7 +164,7 @@ void rsi_ble_event_handling_task(void)
         }
     }
 
-    WFX_RSI_LOG("%s  END", __func__);
+    WFX_RSI_LOG("%s  Ended", __func__);
 }
 
 namespace chip {

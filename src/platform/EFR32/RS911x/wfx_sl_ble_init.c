@@ -36,6 +36,7 @@
 rsi_ble_event_conn_status_t conn_event_to_app;
 rsi_ble_t att_list;
 sl_wfx_msg_t event_msg;
+rsi_semaphore_handle_t sl_ble_sem;
 
 // Memory to initialize driver
 uint8_t bt_global_buf[BT_GLOBAL_BUFF_LEN];
@@ -48,35 +49,15 @@ StackType_t driverRsiTaskStack[WFX_RSI_WLAN_TASK_SZ] = { 0 };
 /* Structure that will hold the TCB of the wfxRsi Task being created. */
 StaticTask_t driverRsiTaskBuffer;
 
-
-
-
-SemaphoreHandle_t sl_ble_mutex      = NULL;
-StaticSemaphore_t sl_ble_MutexBuffer;
-
-
 int32_t wfx_sl_module_init(void)
 {
     int32_t status;
-    sl_status_t result;
+//    sl_status_t result;
     uint8_t buf[RSI_RESPONSE_HOLD_BUFF_SIZE];
     extern void rsi_hal_board_init(void);
 
-    if ((sl_ble_mutex = xSemaphoreCreateMutexStatic(&sl_ble_MutexBuffer)) == NULL)
-    {
-        return SL_STATUS_FAIL;
-    }
-
+    rsi_semaphore_create(&sl_ble_sem, 0);
     WFX_RSI_LOG("%s: starting(HEAP_SZ = %d)", __func__, SL_HEAP_SIZE);
-
-    result = sl_ble_mutex_lock();
-
-    if (result != SL_STATUS_OK) {
-        WFX_RSI_LOG("%s: Error while taking the sl_ble_mutex_lock");
-        //if driver lock is not successful, return immediatly
-        return result;
-    }
-
 
     //! Driver initialization
     status = rsi_driver_init(wfx_rsi_drv_buf, WFX_RSI_BUF_SZ);
@@ -145,57 +126,11 @@ int32_t wfx_sl_module_init(void)
         return status;
     }
 
-    result = sl_ble_mutex_unlock();
-
-    if (result != SL_STATUS_OK) {
-        WFX_RSI_LOG("%s: error: failed to sl_ble_mutex_unlock.", __func__);
-        return RSI_ERROR_INVALID_PARAM;
-    }
-
-
+    rsi_semaphore_post(&sl_ble_sem);
     WFX_RSI_LOG("%s complete", __func__);
     rsi_task_destroy((rsi_task_handle_t *)wfx_rsi.init_task);
     return RSI_SUCCESS;
 }
-
-
-/****************************************************************************
- * @fn  sl_status_t sl_ble_mutex_lock(void)
- * @brief
- * Called when the driver needs to lock its access
- * @returns Returns SL_STATUS_OK if successful,
- *SL_STATUS_TIMEOUT otherwise
- *****************************************************************************/
-sl_status_t sl_ble_mutex_lock(void)
-{
-
-    sl_status_t status = SL_STATUS_OK;
-
-    if (xSemaphoreTake(sl_ble_mutex, TICKS_TO_WAIT_500) != pdTRUE)
-    {
-        WFX_RSI_LOG("*ERR*Wi-Fi driver mutex time out");
-        status = SL_STATUS_TIMEOUT;
-    }
-
-    return status;
-}
-
-
-/****************************************************************************
- * @fn  sl_status_t sl_ble_mutex_unlock(void)
- * @brief
- * Called when the driver needs to unlock its access
- * @returns Returns SL_STATUS_OK
- *****************************************************************************/
-sl_status_t sl_ble_mutex_unlock(void)
-{
-    WFX_RSI_LOG("%s Start", __func__);
-    xSemaphoreGive(sl_ble_mutex);
-    WFX_RSI_LOG("%s End", __func__);
-
-    return SL_STATUS_OK;
-}
-
 
 /*==============================================*/
 /**
