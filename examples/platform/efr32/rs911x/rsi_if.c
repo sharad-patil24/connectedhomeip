@@ -32,7 +32,7 @@
 #include "event_groups.h"
 #include "task.h"
 
-//#include <wfx_sl_module_init.h>
+#include <wfx_sl_module_init.h>
 #include "wfx_host_events.h"
 
 #include "rsi_driver.h"
