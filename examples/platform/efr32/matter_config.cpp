@@ -150,16 +150,12 @@ CHIP_ERROR EFR32MatterConfig::InitMatter(const char * appName)
     // Init Matter Stack
     //==============================================
     EFR32_LOG("Init CHIP Stack");
+
     // Init Chip memory management before the stack
     ReturnErrorOnFailure(chip::Platform::MemoryInit());
 
-//    EFR32_LOG("Init RSI 911x Platform");
-//    wfx_rsi_init_platform();
-
-    EFR32_LOG("Init CHIP PlatformMgr ChipStack");
     ReturnErrorOnFailure(PlatformMgr().InitChipStack());
 
-    EFR32_LOG("Init Set BLE Device Name");
     chip::DeviceLayer::ConnectivityMgr().SetBLEDeviceName(appName);
 
 #if CHIP_ENABLE_OPENTHREAD

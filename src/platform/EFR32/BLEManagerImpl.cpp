@@ -43,7 +43,7 @@ extern "C" {
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
 #include <platform/CommissionableDataProvider.h>
-#include <platform/DeviceInstanceInfoProvider.h>![](C:/Users/shgutte/AppData/Local/Temp/download.jpg)
+#include <platform/DeviceInstanceInfoProvider.h>
 #include <sl_bt_rtos_adaptation.h>
 
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
@@ -1017,7 +1017,7 @@ extern "C" void sl_bt_on_event(sl_bt_msg_t * evt)
     break;
     case sl_bt_evt_connection_parameters_id: {
         // ChipLogProgress(DeviceLayer, "Connection parameter ID received");
-
+    }
     break;
     case sl_bt_evt_connection_phy_status_id: {
         // ChipLogProgress(DeviceLayer, "PHY update procedure is completed");
@@ -1045,13 +1045,10 @@ extern "C" void sl_bt_on_event(sl_bt_msg_t * evt)
     case sl_bt_evt_gatt_server_characteristic_status_id: {
         sl_bt_gatt_server_characteristic_status_flag_t StatusFlags;
 
-
-
         StatusFlags = (sl_bt_gatt_server_characteristic_status_flag_t) evt->data.evt_gatt_server_characteristic_status.status_flags;
 
         if (sl_bt_gatt_server_confirmation == StatusFlags)
         {
-
             chip::DeviceLayer::Internal::BLEMgrImpl().HandleTxConfirmationEvent(
                 evt->data.evt_gatt_server_characteristic_status.connection);
         }

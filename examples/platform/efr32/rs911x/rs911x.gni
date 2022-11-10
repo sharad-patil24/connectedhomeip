@@ -21,7 +21,7 @@ rs911x_plat_incs = [
   "${wifi_sdk_dir}",
   "${wifi_sdk_dir}/hal",
   "${chip_root}/src/platform/EFR32",
-  "${chip_root}/src/platform/EFR32/RS911x",
+  "${chip_root}/src/platform/EFR32/rs911x",
 ]
 
 #
@@ -62,7 +62,7 @@ rs911x_src_sapi = [
 ]
 
 foreach(src_file, rs911x_src_sapi) {
-  rs911x_cflags += [ "-Wno-empty-body", "-w" ]
+  rs911x_cflags += [ "-Wno-empty-body" ]
 }
 
 rs911x_inc_plat = [
