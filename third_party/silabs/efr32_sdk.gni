@@ -570,14 +570,14 @@ template("efr32_sdk") {
       "${efr32_sdk_root}/util/third_party/freertos/kernel/tasks.c",
       "${efr32_sdk_root}/util/third_party/freertos/kernel/timers.c",
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/gatt_db.c",
-#      "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_bluetooth.c",
+      "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_bluetooth.c",
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_board_default_init.c",
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_device_init_clocks.c",
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_event_handler.c",
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_simple_button_instances.c",
       "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_ble_gap_apis.c",
-      "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_bt_common_apis.c",
       "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_ble_gatt_apis.c",
+      "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_bt_common_apis.c",
       "${wiseconnect_sdk_root}/sapi/driver/rsi_bt_ble.c",
     ]
 
