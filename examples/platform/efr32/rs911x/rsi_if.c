@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 #include "em_bus.h"
 #include "em_cmu.h"
 #include "em_gpio.h"
@@ -31,6 +32,7 @@
 #include "event_groups.h"
 #include "task.h"
 
+#include <wfx_sl_module_init.h>
 #include "wfx_host_events.h"
 
 #include "rsi_driver.h"
@@ -44,19 +46,20 @@
 #include "rsi_wlan.h"
 #include "rsi_wlan_apis.h"
 #include "rsi_wlan_config.h"
-//#include "rsi_wlan_non_rom.h"
 #include "rsi_bootup_config.h"
 #include "rsi_error.h"
+
+#include "rsi_bt_common.h"
+#include "rsi_ble_apis.h"
+#include "rsi_bt_common_apis.h"
+#include "rsi_ble_config.h"
+#include "rsi_utils.h"
 
 #include "dhcp_client.h"
 #include "wfx_host_events.h"
 #include "wfx_rsi.h"
 
-/* Rsi driver Task will use as its stack */
-StackType_t driverRsiTaskStack[WFX_RSI_WLAN_TASK_SZ] = { 0 };
 
-/* Structure that will hold the TCB of the wfxRsi Task being created. */
-StaticTask_t driverRsiTaskBuffer;
 
 /* Declare a variable to hold the data associated with the created event group. */
 StaticEventGroup_t rsiDriverEventGroup;
@@ -70,7 +73,6 @@ bool hasNotifiedWifiConnectivity = false;
 /*
  * This file implements the interface to the RSI SAPIs
  */
-static uint8_t wfx_rsi_drv_buf[WFX_RSI_BUF_SZ];
 wfx_wifi_scan_ext_t * temp_reset;
 uint8_t security;
 
@@ -293,76 +295,6 @@ static void wfx_rsi_wlan_pkt_cb(uint16_t status, uint8_t * buf, uint32_t len)
 static int32_t wfx_rsi_init(void)
 {
     int32_t status;
-    uint8_t buf[RSI_RESPONSE_HOLD_BUFF_SIZE];
-    extern void rsi_hal_board_init(void);
-
-    WFX_RSI_LOG("%s: starting(HEAP_SZ = %d)", __func__, SL_HEAP_SIZE);
-    //! Driver initialization
-    status = rsi_driver_init(wfx_rsi_drv_buf, WFX_RSI_BUF_SZ);
-    if ((status < RSI_DRIVER_STATUS) || (status > WFX_RSI_BUF_SZ))
-    {
-        WFX_RSI_LOG("%s: error: RSI drv init failed with status: %02x", __func__, status);
-        return status;
-    }
-
-    WFX_RSI_LOG("%s: rsi_device_init", __func__);
-    /* ! Redpine module intialisation */
-    if ((status = rsi_device_init(LOAD_NWP_FW)) != RSI_SUCCESS)
-    {
-        WFX_RSI_LOG("%s: error: rsi_device_init failed with status: %02x", __func__, status);
-        return status;
-    }
-    WFX_RSI_LOG("%s: start wireless drv task", __func__);
-    /*
-     * Create the driver task
-     */
-    wfx_rsi.drv_task = xTaskCreateStatic((TaskFunction_t) rsi_wireless_driver_task, "rsi_drv", WFX_RSI_WLAN_TASK_SZ, NULL,
-                                         WLAN_TASK_PRIORITY, driverRsiTaskStack, &driverRsiTaskBuffer);
-    if (NULL == wfx_rsi.drv_task)
-    {
-        WFX_RSI_LOG("%s: error: rsi_wireless_driver_task failed", __func__);
-        return RSI_ERROR_INVALID_PARAM;
-    }
-
-    /* Initialize WiSeConnect or Module features. */
-    WFX_RSI_LOG("%s: rsi_wireless_init", __func__);
-    if ((status = rsi_wireless_init(OPER_MODE_0, COEX_MODE_0)) != RSI_SUCCESS)
-    {
-        WFX_RSI_LOG("%s: error: rsi_wireless_init failed with status: %02x", __func__, status);
-        return status;
-    }
-
-    WFX_RSI_LOG("%s: get FW version..", __func__);
-    /*
-     * Get the MAC and other info to let the user know about it.
-     */
-    if (rsi_wlan_get(RSI_FW_VERSION, buf, sizeof(buf)) != RSI_SUCCESS)
-    {
-        WFX_RSI_LOG("%s: error: rsi_wlan_get(RSI_FW_VERSION) failed with status: %02x", __func__, status);
-        return status;
-    }
-
-    buf[sizeof(buf) - 1] = 0;
-    WFX_RSI_LOG("%s: RSI firmware version: %s", __func__, buf);
-    //! Send feature frame
-    if ((status = rsi_send_feature_frame()) != RSI_SUCCESS)
-    {
-        WFX_RSI_LOG("%s: error: rsi_send_feature_frame failed with status: %02x", __func__, status);
-        return status;
-    }
-
-    WFX_RSI_LOG("%s: sent rsi_send_feature_frame", __func__);
-    /* initializes wlan radio parameters and WLAN supplicant parameters.
-     */
-    (void) rsi_wlan_radio_init(); /* Required so we can get MAC address */
-    if ((status = rsi_wlan_get(RSI_MAC_ADDRESS, &wfx_rsi.sta_mac.octet[0], RESP_BUFF_SIZE)) != RSI_SUCCESS)
-    {
-        WFX_RSI_LOG("%s: error: rsi_wlan_get failed with status: %02x", __func__, status);
-        return status;
-    }
-
-    WFX_RSI_LOG("%s: WLAN: MAC %02x:%02x:%02x %02x:%02x:%02x", __func__, wfx_rsi.sta_mac.octet[0], wfx_rsi.sta_mac.octet[1],
-                wfx_rsi.sta_mac.octet[2], wfx_rsi.sta_mac.octet[3], wfx_rsi.sta_mac.octet[4], wfx_rsi.sta_mac.octet[5]);
     wfx_rsi.events = xEventGroupCreateStatic(&rsiDriverEventGroup);
     /*
      * Register callbacks - We are only interested in the connectivity CBs
@@ -849,4 +781,7 @@ int32_t wfx_rsi_send_data(void * p, uint16_t len)
     return status;
 }
 
+
+
 struct wfx_rsi wfx_rsi;
+
