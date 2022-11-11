@@ -65,11 +65,13 @@ CHIP_ERROR ConnectivityManagerImpl::_Init()
 
     // TODO Initialize the Chip Addressing and Routing Module.
 
+    ChipLogProgress(DeviceLayer, "%s started", __func__);
+
     // Ensure that station mode is enabled.
     wfx_enable_sta_mode();
 
     err = DeviceLayer::SystemLayer().ScheduleWork(DriveStationState, NULL);
-
+    ChipLogProgress(DeviceLayer, "%s Ended", __func__);
     SuccessOrExit(err);
 
 exit:
@@ -228,12 +230,15 @@ void ConnectivityManagerImpl::DriveStationState()
     sl_status_t serr;
     bool stationConnected;
 
+     ChipLogProgress(DeviceLayer, "%s starting", __func__);
     // Refresh the current station mode.
     GetWiFiStationMode();
 
     // If the station interface is NOT under application control...
     if (mWiFiStationMode != kWiFiStationMode_ApplicationControlled)
     {
+        
+        ChipLogProgress(DeviceLayer, "WiFi Init started");
         // Ensure that the WFX is started.
         if ((serr = wfx_wifi_start()) != SL_STATUS_OK)
         {
