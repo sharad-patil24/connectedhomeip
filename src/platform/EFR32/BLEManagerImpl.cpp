@@ -43,7 +43,7 @@ extern "C" {
 #include <lib/support/CodeUtils.h>
 #include <lib/support/logging/CHIPLogging.h>
 #include <platform/CommissionableDataProvider.h>
-#include <platform/DeviceInstanceInfoProvider.h>![](C:/Users/shgutte/AppData/Local/Temp/download.jpg)
+#include <platform/DeviceInstanceInfoProvider.h>
 #include <sl_bt_rtos_adaptation.h>
 
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
@@ -1092,5 +1092,5 @@ extern "C" void sl_bt_on_event(sl_bt_msg_t * evt)
 
     chip::DeviceLayer::PlatformMgr().UnlockChipStack();
 }
-
+}
 #endif // CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE

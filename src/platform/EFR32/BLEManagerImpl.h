@@ -28,7 +28,7 @@
 #include "FreeRTOS.h"
 #include "gatt_db.h"
 #include "timers.h"
-
+#ifdef RS91X_BLE_ENABLE
 extern "C" {
 #include <rsi_ble.h>
 #include <rsi_ble_apis.h>
@@ -38,7 +38,10 @@ extern "C" {
 //#include "wfx_sl_ble_init.h"
 
 }
-
+#else
+#include "sl_bgapi.h"
+#include "sl_bt_api.h"
+#endif
 namespace chip {
 namespace DeviceLayer {
 namespace Internal {
@@ -53,6 +56,8 @@ class BLEManagerImpl final : public BLEManager, private BleLayer, private BlePla
 
 public:
     void HandleBootEvent(void);
+
+#ifdef RS91X_BLE_ENABLE
     void HandleConnectEvent(void);//volatile sl_bt_msg_t * evt);
     void HandleConnectionCloseEvent(uint16_t reason);
     void HandleWriteEvent(rsi_ble_event_write_t  evt);
@@ -60,9 +65,23 @@ public:
     void HandleTxConfirmationEvent(BLE_CONNECTION_OBJECT conId);
     void HandleTXCharCCCDWrite(rsi_ble_event_write_t *evt);
     void HandleSoftTimerEvent(void);
+#else
+    void HandleConnectEvent(volatile sl_bt_msg_t * evt);
+    void HandleConnectionCloseEvent(volatile sl_bt_msg_t * evt);
+    void HandleWriteEvent(volatile sl_bt_msg_t * evt);
+    void UpdateMtu(volatile sl_bt_msg_t * evt);
+    void HandleTxConfirmationEvent(BLE_CONNECTION_OBJECT conId);
+    void HandleTXCharCCCDWrite(volatile sl_bt_msg_t * evt);
+    void HandleSoftTimerEvent(volatile sl_bt_msg_t * evt);
+
+#endif
 
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
+#ifdef RS91X_BLE_ENABLE
     static void HandleC3ReadRequest(void);
+#else
+    static void HandleC3ReadRequest(volatile sl_bt_msg_t * evt);
+#endif
 #endif
 
 private:
@@ -158,14 +177,17 @@ public:
 
 private:
     CHIP_ERROR MapBLEError(int bleErr);
-//    void DriveBLEState(void);
     CHIP_ERROR ConfigureAdvertisingData(void);
-    //CHIP_ERROR StartAdvertising(void);
     CHIP_ERROR StopAdvertising(void);
 #if CHIP_ENABLE_ADDITIONAL_DATA_ADVERTISING
     CHIP_ERROR EncodeAdditionalDataTlv();
 #endif
+
+#ifdef RS91X_BLE_ENABLE
     void HandleRXCharWrite(rsi_ble_event_write_t * evt);
+#else
+    void HandleRXCharWrite(volatile sl_bt_msg_t * evt);
+#endif
     bool RemoveConnection(uint8_t connectionHandle);
     void AddConnection(uint8_t connectionHandle, uint8_t bondingHandle);
     void StartBleAdvTimeoutTimer(uint32_t aTimeoutInMs);

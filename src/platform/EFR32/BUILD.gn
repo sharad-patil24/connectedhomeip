@@ -15,12 +15,20 @@
 import("//build_overrides/chip.gni")
 import("//build_overrides/pigweed.gni")
 
-import("${chip_root}/src/platform/device.gni")
-
 import("${chip_root}/build/chip/buildconfig_header.gni")
 import("${chip_root}/src/crypto/crypto.gni")
+import("${chip_root}/src/platform/device.gni")
 
+#thiru
+import("//build_overrides/build.gni")
+import("//build_overrides/nlio.gni")
+import("${build_root}/config/linux/pkg_config.gni")
+#import("device.gni")
 assert(chip_device_platform == "efr32")
+
+declare_args() {
+  chip_enable_ble_rs911x = false
+}
 
 if (chip_enable_openthread) {
   import("//build_overrides/openthread.gni")
@@ -29,16 +37,15 @@ if (chip_enable_openthread) {
 if (chip_crypto == "platform") {
   import("//build_overrides/mbedtls.gni")
 }
+if (chip_enable_ble_rs911x) {
+  defines = [ "RS91X_BLE_ENABLE=1" ]
+}
 
 static_library("EFR32") {
   sources = [
     "../FreeRTOS/SystemTimeSupport.cpp",
     "../SingletonConfigurationManager.cpp",
-    "RS911x/BLEManagerImpl.cpp",
-    "RS911x/wfx_sl_ble_init.h",
-    "RS911x/wfx_sl_ble_init.c",
-    "RS911x/rsi_ble_config.h",
-    "RS911x/BLEManagerImpl.h",
+    "BLEManagerImpl.h",
     "BlePlatformConfig.h",
     "CHIPDevicePlatformConfig.h",
     "CHIPDevicePlatformEvent.h",
@@ -61,6 +68,17 @@ static_library("EFR32") {
     "PlatformManagerImpl.h",
     "SystemPlatformConfig.h",
   ]
+
+  if (chip_enable_ble_rs911x) {
+    sources += [
+      "RS911x/BLEManagerImpl.cpp",
+      "RS911x/rsi_ble_config.h",
+      "RS911x/wfx_sl_ble_init.c",
+      "RS911x/wfx_sl_ble_init.h",
+    ]
+  } else {
+    sources += [ "BLEManagerImpl.cpp" ]
+  }
 
   if (chip_enable_ota_requestor) {
     sources += [
