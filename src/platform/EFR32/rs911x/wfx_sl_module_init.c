@@ -3,7 +3,7 @@
 * @brief
 *******************************************************************************
 * # License
-* <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
+* <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
 *******************************************************************************
 *
 * The licensor of this software is Silicon Laboratories Inc. Your use of this
@@ -19,14 +19,7 @@
  */
 
  /*================================================================================
- * @brief : This file contains example application for Wlan Station BLE
- * Provisioning
- * @section Description :
- * This application explains how to get the WLAN connection functionality using
- * BLE provisioning.
- * Silicon Labs Module starts advertising and with BLE Provisioning the Access Point
- * details are fetched.
- * Silicon Labs device is configured as a WiFi station and connects to an Access Point.
+ * @brief : This file contains the code to init the rs911x all driver and modules.
  =================================================================================*/
 
 #include "wfx_sl_module_init.h"

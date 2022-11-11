@@ -31,9 +31,9 @@
 
 #include "rail.h"
 
-//#ifdef __cplusplus
+#ifdef __cplusplus
 extern "C" {
-//#endif
+#endif
 #include <stdbool.h>
 #include "FreeRTOS.h"
 #include "event_groups.h"
@@ -44,9 +44,9 @@ extern "C" {
 #include "wfx_sl_module_init.h"
 #include <rsi_driver.h>
 #include <rsi_utils.h>
-//#ifdef __cplusplus
+#ifdef __cplusplus
 }
-//#endif
+#endif
 
 
 #include <ble/CHIPBleServiceData.h>
