@@ -67,14 +67,14 @@ static_library("EFR32") {
     "PlatformManagerImpl.cpp",
     "PlatformManagerImpl.h",
     "SystemPlatformConfig.h",
-    "wfx_sl_ble_init.c",
-    "wfx_sl_ble_init.h",
+    "wfx_sl_module_init.c",
+    "wfx_sl_module_init.h",
+    "rs911x/rsi_ble_config.h",
   ]
 
   if (chip_enable_ble_rs911x) {
     sources += [
-      "RS911x/BLEManagerImpl.cpp",
-      "RS911x/rsi_ble_config.h",
+      "rs911x/BLEManagerImpl.cpp",
     ]
   } else {
     sources += [ "BLEManagerImpl.cpp" ]

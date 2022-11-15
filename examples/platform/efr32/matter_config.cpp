@@ -25,8 +25,17 @@
 
 #include <mbedtls/platform.h>
 
+#include "event_groups.h"
+#include "wfx_rsi.h"
 #ifdef SL_WIFI
-#include "wfx_host_events.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "wfx_sl_module_init.h"
+#ifdef __cplusplus
+}
+#endif
+//#include "wfx_host_events.h"
 #endif /* SL_WIFI */
 
 #if PW_RPC_ENABLED
@@ -47,8 +56,15 @@ using namespace ::chip::DeviceLayer;
 
 #include <crypto/CHIPCryptoPAL.h>
 
-#include "event_groups.h"
-#include "wfx_rsi.h"
+
+
+StaticTask_t busInitTaskStruct;
+
+/* wfxRsi Task will use as its stack */
+StackType_t wfxRsiInitTaskStack[WFX_RSI_TASK_SZ] = { 0 };
+
+/* wfxRsi Task will use as its stack */
+StackType_t wfxBLETaskStack[WFX_RSI_TASK_SZ] = { 0 };
 
 // If building with the EFR32-provided crypto backend, we can use the
 // opaque keystore
@@ -150,17 +166,21 @@ CHIP_ERROR EFR32MatterConfig::InitMatter(const char * appName)
     // Init Matter Stack
     //==============================================
     EFR32_LOG("Init CHIP Stack");
+
     // Init Chip memory management before the stack
     ReturnErrorOnFailure(chip::Platform::MemoryInit());
 
-//    EFR32_LOG("Init RSI 911x Platform");
-//    wfx_rsi_init_platform();
-
-    EFR32_LOG("Init CHIP PlatformMgr ChipStack");
     ReturnErrorOnFailure(PlatformMgr().InitChipStack());
 
-    EFR32_LOG("Init Set BLE Device Name");
     chip::DeviceLayer::ConnectivityMgr().SetBLEDeviceName(appName);
+
+    EFR32_LOG("Init WIFI Module Stack");
+    wfx_rsi.init_task = xTaskCreateStatic((TaskFunction_t) wfx_sl_module_init, "init_task", WFX_RSI_TASK_SZ, NULL, 5, wfxRsiInitTaskStack, &busInitTaskStruct);
+
+    if (NULL == wfx_rsi.init_task) {
+        EFR32_LOG("%s: error: failed to create task.", __func__);
+    }
+
 
 #if CHIP_ENABLE_OPENTHREAD
     ReturnErrorOnFailure(InitOpenThread());

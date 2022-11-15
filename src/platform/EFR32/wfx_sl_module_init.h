@@ -1,9 +1,9 @@
 /*******************************************************************************
- * @file  wfx_sl_ble_init.h
+ * @file  wfx_sl_module_init.h
  * @brief
  *******************************************************************************
  * # License
- * <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * The licensor of this software is Silicon Laboratories Inc. Your use of this
@@ -30,18 +30,13 @@
 #include <stdbool.h>
 #include "FreeRTOS.h"
 #include "event_groups.h"
+#include "rsi_ble_common_config.h"
 #include "rsi_ble_config.h"
 #include "task.h"
 #include "timers.h"
 #include "wfx_host_events.h"
 #include "wfx_rsi.h"
-#include <rsi_ble.h>
-#include <rsi_ble_apis.h>
-#include <rsi_ble_common_config.h>
-#include <rsi_ble_config.h>
 #include <rsi_bootup_config.h>
-#include <rsi_bt_common.h>
-#include <rsi_bt_common_apis.h>
 #include <rsi_common_apis.h>
 #include <rsi_driver.h>
 #include <rsi_wlan_apis.h>
@@ -52,6 +47,7 @@
 #ifdef RSI_M4_INTERFACE
 #include "rsi_board.h"
 #endif
+
 
 
 #define ATT_REC_IN_HOST 0
@@ -112,8 +108,6 @@ typedef struct sl_wfx_msg_s
 } sl_wfx_msg_t;
 
 int32_t wfx_sl_module_init(void);
-sl_status_t sl_ble_mutex_lock(void);
-sl_status_t sl_ble_mutex_unlock(void);
 void rsi_ble_on_connect_event(rsi_ble_event_conn_status_t * resp_conn);
 void rsi_ble_on_disconnect_event(rsi_ble_event_disconnect_t * resp_disconnect, uint16_t reason);
 void rsi_ble_on_enhance_conn_status_event(rsi_ble_event_enhance_conn_status_t * resp_enh_conn);

@@ -32,7 +32,7 @@
 #include "event_groups.h"
 #include "task.h"
 
-#include "wfx_sl_ble_init.h"
+#include <wfx_sl_module_init.h>
 #include "wfx_host_events.h"
 
 #include "rsi_driver.h"
@@ -46,7 +46,6 @@
 #include "rsi_wlan.h"
 #include "rsi_wlan_apis.h"
 #include "rsi_wlan_config.h"
-//#include "rsi_wlan_non_rom.h"
 #include "rsi_bootup_config.h"
 #include "rsi_error.h"
 
@@ -74,7 +73,6 @@ bool hasNotifiedWifiConnectivity = false;
 /*
  * This file implements the interface to the RSI SAPIs
  */
-//static uint8_t wfx_rsi_drv_buf[WFX_RSI_BUF_SZ];
 wfx_wifi_scan_ext_t * temp_reset;
 uint8_t security;
 
@@ -297,11 +295,6 @@ static void wfx_rsi_wlan_pkt_cb(uint16_t status, uint8_t * buf, uint32_t len)
 static int32_t wfx_rsi_init(void)
 {
     int32_t status;
-    WFX_RSI_LOG("%s starting", __func__);
-#if !RS91X_BLE_ENABLE
-    wfx_sl_module_init();
-#endif
-
     wfx_rsi.events = xEventGroupCreateStatic(&rsiDriverEventGroup);
     /*
      * Register callbacks - We are only interested in the connectivity CBs
@@ -791,16 +784,3 @@ int32_t wfx_rsi_send_data(void * p, uint16_t len)
 
 
 struct wfx_rsi wfx_rsi;
-
-//void rsi_init_task(void * arg)
-//{
-//   uint32_t rsi_status = wfx_sl_module_init();
-//    if (rsi_status != RSI_SUCCESS)
-//    {
-//        WFX_RSI_LOG("%s: error: wfx_sl_module_init with status: %02x", __func__, rsi_status);
-//        return;
-//    }
-//    WFX_RSI_LOG("After wfx_sl_module_init");
-//    rsi_task_suspend((rsi_task_handle_t *)wfx_rsi.init_task);
-//}
-//

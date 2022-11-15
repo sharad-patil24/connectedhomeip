@@ -92,8 +92,8 @@ namespace {
 #define BLE_CONFIG_MIN_INTERVAL (16) // Time = Value x 1.25 ms = 30ms
 #define BLE_CONFIG_MAX_INTERVAL (80) // Time = Value x 1.25 ms = 100ms
 #define BLE_CONFIG_LATENCY (0)
-#define BLE_CONFIG_TIMEOUT (100)          // Time = Value x 10 ms = 1s
-#define BLE_CONFIG_MIN_CE_LENGTH (0)      // Leave to min value
+#define BLE_CONFIG_TIMEOUT (100) // Time = Value x 10 ms = 1s
+#define BLE_CONFIG_MIN_CE_LENGTH (0) // Leave to min value
 #define BLE_CONFIG_MAX_CE_LENGTH (0xFFFF) // Leave to max value
 
 TimerHandle_t sbleAdvTimeoutTimer; // FreeRTOS sw timer.
@@ -132,6 +132,7 @@ CHIP_ERROR BLEManagerImpl::_Init()
 
     mFlags.ClearAll().Set(Flags::kAdvertisingEnabled, CHIP_DEVICE_CONFIG_CHIPOBLE_ENABLE_ADVERTISING_AUTOSTART);
     mFlags.Set(Flags::kFastAdvertisingEnabled, true);
+
     PlatformMgr().ScheduleWork(DriveBLEState, 0);
 
 exit:
@@ -1017,7 +1018,7 @@ extern "C" void sl_bt_on_event(sl_bt_msg_t * evt)
     break;
     case sl_bt_evt_connection_parameters_id: {
         // ChipLogProgress(DeviceLayer, "Connection parameter ID received");
-
+    }
     break;
     case sl_bt_evt_connection_phy_status_id: {
         // ChipLogProgress(DeviceLayer, "PHY update procedure is completed");
@@ -1045,13 +1046,10 @@ extern "C" void sl_bt_on_event(sl_bt_msg_t * evt)
     case sl_bt_evt_gatt_server_characteristic_status_id: {
         sl_bt_gatt_server_characteristic_status_flag_t StatusFlags;
 
-
-
         StatusFlags = (sl_bt_gatt_server_characteristic_status_flag_t) evt->data.evt_gatt_server_characteristic_status.status_flags;
 
         if (sl_bt_gatt_server_confirmation == StatusFlags)
         {
-
             chip::DeviceLayer::Internal::BLEMgrImpl().HandleTxConfirmationEvent(
                 evt->data.evt_gatt_server_characteristic_status.connection);
         }
@@ -1091,6 +1089,5 @@ extern "C" void sl_bt_on_event(sl_bt_msg_t * evt)
     }
 
     chip::DeviceLayer::PlatformMgr().UnlockChipStack();
-}
-}
+} // END sl_bt_on_event
 #endif // CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE

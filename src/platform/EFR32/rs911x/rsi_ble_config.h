@@ -3,7 +3,7 @@
  * @brief
  *******************************************************************************
  * # License
- * <b>Copyright 2020 Silicon Laboratories Inc. www.silabs.com</b>
+ * <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * The licensor of this software is Silicon Laboratories Inc. Your use of this
@@ -81,8 +81,8 @@
 
 #define RSI_BLE_MAX_NBR_ATT_SERV 10
 
-#define RSI_BLE_MAX_NBR_MASTERS 1
-#define RSI_BLE_GATT_ASYNC_ENABLE 1
+//#define RSI_BLE_MAX_NBR_MASTERS 1
+//#define RSI_BLE_GATT_ASYNC_ENABLE 1
 #define RSI_BLE_GATT_INIT 0
 
 /* Number of BLE GATT RECORD SIZE IN (n*16 BYTES), eg:(0x40*16)=1024 bytes */

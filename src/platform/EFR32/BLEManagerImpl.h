@@ -1,6 +1,6 @@
 /*
  *
- *    Copyright (c) 2020-2021 Project CHIP Authors
+ *    Copyright (c) 2020-2022 Project CHIP Authors
  *    Copyright (c) 2019 Nest Labs, Inc.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
@@ -29,19 +29,24 @@
 #include "gatt_db.h"
 #include "timers.h"
 #ifdef RS91X_BLE_ENABLE
+
+#ifdef __cplusplus
 extern "C" {
+#endif
+//#include "rsi_ble_config.h"
 #include <rsi_ble.h>
 #include <rsi_ble_apis.h>
-#include <rsi_ble_config.h>
 #include <rsi_bt_common.h>
-#include <rsi_bt_common_apis.h>
-//#include "wfx_sl_ble_init.h"
-
+//#include <rsi_bt_common_apis.h>
+#ifdef __cplusplus
 }
+#endif
+
 #else
 #include "sl_bgapi.h"
 #include "sl_bt_api.h"
 #endif
+
 namespace chip {
 namespace DeviceLayer {
 namespace Internal {
@@ -58,12 +63,12 @@ public:
     void HandleBootEvent(void);
 
 #ifdef RS91X_BLE_ENABLE
-    void HandleConnectEvent(void);//volatile sl_bt_msg_t * evt);
+    void HandleConnectEvent(void);
     void HandleConnectionCloseEvent(uint16_t reason);
-    void HandleWriteEvent(rsi_ble_event_write_t  evt);
-    void UpdateMtu(rsi_ble_event_mtu_t  evt);
+    void HandleWriteEvent(rsi_ble_event_write_t evt);
+    void UpdateMtu(rsi_ble_event_mtu_t evt);
     void HandleTxConfirmationEvent(BLE_CONNECTION_OBJECT conId);
-    void HandleTXCharCCCDWrite(rsi_ble_event_write_t *evt);
+    void HandleTXCharCCCDWrite(rsi_ble_event_write_t * evt);
     void HandleSoftTimerEvent(void);
 #else
     void HandleConnectEvent(volatile sl_bt_msg_t * evt);

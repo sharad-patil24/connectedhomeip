@@ -1,9 +1,9 @@
 /*******************************************************************************
-* @file  wfx_sl_ble_init.c
+* @file  wfx_sl_module_init.c
 * @brief
 *******************************************************************************
 * # License
-* <b>Copyright 2021 Silicon Laboratories Inc. www.silabs.com</b>
+* <b>Copyright 2022 Silicon Laboratories Inc. www.silabs.com</b>
 *******************************************************************************
 *
 * The licensor of this software is Silicon Laboratories Inc. Your use of this
@@ -19,17 +19,10 @@
  */
 
  /*================================================================================
- * @brief : This file contains example application for Wlan Station BLE
- * Provisioning
- * @section Description :
- * This application explains how to get the WLAN connection functionality using
- * BLE provisioning.
- * Silicon Labs Module starts advertising and with BLE Provisioning the Access Point
- * details are fetched.
- * Silicon Labs device is configured as a WiFi station and connects to an Access Point.
+ * @brief : This file contains the code to init the rs911x all driver and modules.
  =================================================================================*/
 
-#include "wfx_sl_ble_init.h"
+#include "wfx_sl_module_init.h"
 #include "rsi_ble_config.h"
 
 // application defines
@@ -52,7 +45,6 @@ StaticTask_t driverRsiTaskBuffer;
 int32_t wfx_sl_module_init(void)
 {
     int32_t status;
-//    sl_status_t result;
     uint8_t buf[RSI_RESPONSE_HOLD_BUFF_SIZE];
     extern void rsi_hal_board_init(void);
 
