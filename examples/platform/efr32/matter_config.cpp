@@ -63,9 +63,6 @@ StaticTask_t busInitTaskStruct;
 /* wfxRsi Task will use as its stack */
 StackType_t wfxRsiInitTaskStack[WFX_RSI_TASK_SZ] = { 0 };
 
-/* wfxRsi Task will use as its stack */
-StackType_t wfxBLETaskStack[WFX_RSI_TASK_SZ] = { 0 };
-
 // If building with the EFR32-provided crypto backend, we can use the
 // opaque keystore
 #if CHIP_CRYPTO_PLATFORM

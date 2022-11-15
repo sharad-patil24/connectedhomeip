@@ -67,6 +67,9 @@ extern rsi_semaphore_handle_t sl_ble_sem;
 
 StaticTask_t rsiBLETaskStruct;
 
+/* wfxRsi Task will use as its stack */
+StackType_t wfxBLETaskStack[WFX_RSI_TASK_SZ] = { 0 };
+
 using namespace ::chip;
 using namespace ::chip::Ble;
 
