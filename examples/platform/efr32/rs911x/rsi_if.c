@@ -69,6 +69,7 @@ bool hasNotifiedIPV6 = false;
 bool hasNotifiedIPV4 = false;
 #endif /* CHIP_DEVICE_CONFIG_ENABLE_IPV4 */
 bool hasNotifiedWifiConnectivity = false;
+extern rsi_semaphore_handle_t sl_wfx_sem;
 
 /*
  * This file implements the interface to the RSI SAPIs
@@ -450,6 +451,11 @@ static void wfx_rsi_do_join(void)
 void wfx_rsi_task(void * arg)
 {
     EventBits_t flags;
+
+    //! if events are not received, loop will be continued
+    rsi_semaphore_wait(&sl_wfx_sem, 0);
+    WFX_RSI_LOG("%s: starting ", __func__);
+
 #ifndef RS911X_SOCKETS
     TickType_t last_dhcp_poll, now;
     struct netif * sta_netif;

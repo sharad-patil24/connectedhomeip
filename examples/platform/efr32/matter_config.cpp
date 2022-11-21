@@ -56,8 +56,6 @@ using namespace ::chip::DeviceLayer;
 
 #include <crypto/CHIPCryptoPAL.h>
 
-
-
 StaticTask_t busInitTaskStruct;
 
 /* wfxRsi Task will use as its stack */
@@ -172,7 +170,7 @@ CHIP_ERROR EFR32MatterConfig::InitMatter(const char * appName)
     chip::DeviceLayer::ConnectivityMgr().SetBLEDeviceName(appName);
 
     EFR32_LOG("Init WIFI Module Stack");
-    wfx_rsi.init_task = xTaskCreateStatic((TaskFunction_t) wfx_sl_module_init, "init_task", WFX_RSI_TASK_SZ, NULL, 5, wfxRsiInitTaskStack, &busInitTaskStruct);
+    wfx_rsi.init_task = xTaskCreateStatic((TaskFunction_t) wfx_sl_module_init, "init_task", WFX_RSI_TASK_SZ, NULL, 3, wfxRsiInitTaskStack, &busInitTaskStruct);
 
     if (NULL == wfx_rsi.init_task) {
         EFR32_LOG("%s: error: failed to create task.", __func__);

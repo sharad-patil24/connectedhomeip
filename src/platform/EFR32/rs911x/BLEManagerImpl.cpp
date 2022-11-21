@@ -42,6 +42,7 @@ extern "C" {
 #include "wfx_host_events.h"
 #include "wfx_rsi.h"
 #include "wfx_sl_module_init.h"
+#include "wfx_sl_ble_init.h"
 #include <rsi_driver.h>
 #include <rsi_utils.h>
 #ifdef __cplusplus

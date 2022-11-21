@@ -92,8 +92,8 @@ namespace {
 #define BLE_CONFIG_MIN_INTERVAL (16) // Time = Value x 1.25 ms = 30ms
 #define BLE_CONFIG_MAX_INTERVAL (80) // Time = Value x 1.25 ms = 100ms
 #define BLE_CONFIG_LATENCY (0)
-#define BLE_CONFIG_TIMEOUT (100) // Time = Value x 10 ms = 1s
-#define BLE_CONFIG_MIN_CE_LENGTH (0) // Leave to min value
+#define BLE_CONFIG_TIMEOUT (100)          // Time = Value x 10 ms = 1s
+#define BLE_CONFIG_MIN_CE_LENGTH (0)      // Leave to min value
 #define BLE_CONFIG_MAX_CE_LENGTH (0xFFFF) // Leave to max value
 
 TimerHandle_t sbleAdvTimeoutTimer; // FreeRTOS sw timer.
@@ -132,7 +132,6 @@ CHIP_ERROR BLEManagerImpl::_Init()
 
     mFlags.ClearAll().Set(Flags::kAdvertisingEnabled, CHIP_DEVICE_CONFIG_CHIPOBLE_ENABLE_ADVERTISING_AUTOSTART);
     mFlags.Set(Flags::kFastAdvertisingEnabled, true);
-
     PlatformMgr().ScheduleWork(DriveBLEState, 0);
 
 exit:
@@ -1089,5 +1088,6 @@ extern "C" void sl_bt_on_event(sl_bt_msg_t * evt)
     }
 
     chip::DeviceLayer::PlatformMgr().UnlockChipStack();
-} // END sl_bt_on_event
+}
+
 #endif // CHIP_DEVICE_CONFIG_ENABLE_CHIPOBLE
