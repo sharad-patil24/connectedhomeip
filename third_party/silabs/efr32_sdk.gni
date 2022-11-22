@@ -34,6 +34,10 @@ declare_args() {
   kvs_max_entries = 75
   use_external_flash = true
 
+  # Wifi related stuff - they are overridden by gn -args="use_wf200=true"
+  use_wf200 = false
+  use_rs911x = false
+
   # Use Silabs factory data provider example.
   # Users can implement their own.
   use_efr32_factory_data_provider = true
@@ -196,7 +200,6 @@ template("efr32_sdk") {
       "SL_COMPONENT_CATALOG_PRESENT",
       "PLATFORM_HEADER=\"platform-header.h\"",
       "USE_NVM3=1",
-
       #"__STACK_SIZE=0",
       "RSI_BLE_ENABLE=1",
     ]
@@ -575,11 +578,18 @@ template("efr32_sdk") {
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_device_init_clocks.c",
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_event_handler.c",
       "${sdk_support_root}/matter/efr32/${silabs_family}/${silabs_board}/autogen/sl_simple_button_instances.c",
-      "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_ble_gap_apis.c",
-      "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_ble_gatt_apis.c",
-      "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_bt_common_apis.c",
-      "${wiseconnect_sdk_root}/sapi/driver/rsi_bt_ble.c",
+
     ]
+
+    if (use_rs911x) {
+     sources += [
+     "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_ble_gap_apis.c",
+     "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_ble_gatt_apis.c",
+     "${wiseconnect_sdk_root}/sapi/bluetooth/rsi_bt_common_apis.c",
+     "${wiseconnect_sdk_root}/sapi/driver/rsi_bt_ble.c",
+      ]
+    }
+
 
     if (use_wstk_leds) {
       sources += [

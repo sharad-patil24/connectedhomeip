@@ -14,17 +14,12 @@
 
 import("//build_overrides/chip.gni")
 import("//build_overrides/pigweed.gni")
-
+import("//build_overrides/efr32_sdk.gni")
 import("${chip_root}/src/platform/device.gni")
 import("${chip_root}/build/chip/buildconfig_header.gni")
 import("${chip_root}/src/crypto/crypto.gni")
-import("${chip_root}/src/platform/device.gni")
+import("${efr32_sdk_build_root}/efr32_sdk.gni")
 
-#thiru
-import("//build_overrides/build.gni")
-import("//build_overrides/nlio.gni")
-import("${build_root}/config/linux/pkg_config.gni")
-#import("device.gni")
 assert(chip_device_platform == "efr32")
 
 declare_args() {
@@ -40,6 +35,10 @@ if (chip_crypto == "platform") {
 }
 if (chip_enable_ble_rs911x) {
   defines = [ "RS91X_BLE_ENABLE=1" ]
+}
+
+if (use_rs911x) {
+  defines = [ "USE_WIFI_RS911X=1" ]
 }
 
 static_library("EFR32") {
@@ -68,17 +67,24 @@ static_library("EFR32") {
     "PlatformManagerImpl.cpp",
     "PlatformManagerImpl.h",
     "SystemPlatformConfig.h",
-    "wfx_sl_module_init.c",
-    "wfx_sl_module_init.h",
   ]
 
-  if (chip_enable_ble_rs911x) {
+  if (use_rs911x) {
     sources += [
-      "rs911x/BLEManagerImpl.cpp",
-      "rs911x/wfx_sl_ble_init.h",
-      "rs911x/wfx_sl_ble_init.c",
-      "rs911x/rsi_ble_config.h",
+    "wfx_sl_module_init.c",
+    "wfx_sl_module_init.h",
     ]
+
+    if (chip_enable_ble_rs911x) {
+      sources += [
+        "rs911x/BLEManagerImpl.cpp",
+        "rs911x/wfx_sl_ble_init.h",
+        "rs911x/wfx_sl_ble_init.c",
+        "rs911x/rsi_ble_config.h",
+      ]
+    } else {
+      sources += [ "BLEManagerImpl.cpp" ]
+    }
   } else {
     sources += [ "BLEManagerImpl.cpp" ]
   }

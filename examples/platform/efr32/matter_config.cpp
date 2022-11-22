@@ -28,14 +28,18 @@
 #include "event_groups.h"
 #include "wfx_rsi.h"
 #ifdef SL_WIFI
+
+#if USE_WIFI_RS911X
 #ifdef __cplusplus
 extern "C" {
 #endif
 #include "wfx_sl_module_init.h"
 #ifdef __cplusplus
 }
-#endif
-//#include "wfx_host_events.h"
+#endif /* __cplusplus */
+#else
+#include "wfx_host_events.h"
+#endif /* USE_WIFI_RS911X */
 #endif /* SL_WIFI */
 
 #if PW_RPC_ENABLED
@@ -169,13 +173,14 @@ CHIP_ERROR EFR32MatterConfig::InitMatter(const char * appName)
 
     chip::DeviceLayer::ConnectivityMgr().SetBLEDeviceName(appName);
 
+#if USE_WIFI_RS911X
     EFR32_LOG("Init WIFI Module Stack");
     wfx_rsi.init_task = xTaskCreateStatic((TaskFunction_t) wfx_sl_module_init, "init_task", WFX_RSI_TASK_SZ, NULL, 3, wfxRsiInitTaskStack, &busInitTaskStruct);
 
     if (NULL == wfx_rsi.init_task) {
         EFR32_LOG("%s: error: failed to create task.", __func__);
     }
-
+#endif
 
 #if CHIP_ENABLE_OPENTHREAD
     ReturnErrorOnFailure(InitOpenThread());

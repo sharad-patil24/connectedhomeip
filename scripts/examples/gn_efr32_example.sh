@@ -34,7 +34,6 @@ set -x
 env
 USE_WIFI=false
 USE_WIFI_WF200=false
-USE_RS911X_BLE=false
 
 SILABS_THREAD_TARGET=\""../silabs:ot-efr32-cert"\"
 USAGE="./scripts/examples/gn_efr32_example.sh <AppRootFolder> <outputFolder> <silabs_board_name> [<Build options>]"
@@ -151,7 +150,6 @@ else
             ;;
         --chip_enable_ble_rs911x)
             optArgs+="chip_enable_ble_rs911x=true "
-            USE_RS911X_BLE=true
             shift
             ;;
 
