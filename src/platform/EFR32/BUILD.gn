@@ -33,13 +33,16 @@ if (chip_enable_openthread) {
 if (chip_crypto == "platform") {
   import("//build_overrides/mbedtls.gni")
 }
-if (chip_enable_ble_rs911x) {
-  defines = [ "RS91X_BLE_ENABLE=1" ]
-}
 
 if (use_rs911x) {
   defines = [ "USE_WIFI_RS911X=1" ]
 }
+
+if (chip_enable_ble_rs911x) {
+  defines += [ "RS91X_BLE_ENABLE=1", ]
+}
+
+
 
 static_library("EFR32") {
   sources = [
