@@ -220,7 +220,15 @@ else
     BUILD_DIR=$OUTDIR/$SILABS_BOARD
     echo BUILD_DIR="$BUILD_DIR"
     if [ "$USE_WIFI" == true ]; then
-        gn gen --check --fail-on-unused-args --export-compile-commands --root="$ROOT" --dotfile="$ROOT"/build_for_wifi_gnfile.gn --args="silabs_board=\"$SILABS_BOARD\" $optArgs" "$BUILD_DIR"
+        # wifi build
+        #
+        if [[ $SILABS_BOARD == *"BRD4325B"* ]]; then
+            # SOC chip
+            gn gen --check --fail-on-used-args --export-compile-commands --root="$ROOT" --args="silabs_board=\"$SILABS_BOARD\" $optArgs" "$BUILD_DIR"
+        else
+            # NCP mode EFR32 + wifi module
+            gn gen --check --fail-on-unused-args --export-compile-commands --root="$ROOT" --dotfile="$ROOT"/build_for_wifi_gnfile.gn --args="silabs_board=\"$SILABS_BOARD\" $optArgs" "$BUILD_DIR"
+        fi
     else
         # thread build
         #
